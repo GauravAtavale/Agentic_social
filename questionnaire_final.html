@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Finder - Profile Questionnaire</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .question-section {
+            margin-bottom: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-section h2 {
+            color: #333;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .question {
+            margin-bottom: 30px;
+        }
+
+        .question label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .question-hint {
+            display: block;
+            font-size: 0.9em;
+            color: #888;
+            font-weight: normal;
+            margin-top: 5px;
+        }
+
+        /* Checkbox Grid */
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .checkbox-item, .radio-item {
+            position: relative;
+        }
+
+        .checkbox-item input[type="checkbox"],
+        .radio-item input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .checkbox-item label,
+        .radio-item label {
+            display: block;
+            padding: 12px 16px;
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: normal;
+            font-size: 0.95em;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + label,
+        .radio-item input[type="radio"]:checked + label {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.02);
+        }
+
+        .checkbox-item label:hover,
+        .radio-item label:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        /* Radio buttons */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Ranking list */
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: move;
+            border: 2px solid #e0e0e0;
+        }
+
+        .ranking-item:hover {
+            background: #ebebeb;
+        }
+
+        .ranking-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        /* Text inputs */
+        .text-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .text-input::placeholder {
+            color: #aaa;
+        }
+
+        /* File input */
+        .file-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        /* Photo preview */
+        .photo-preview {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .photo-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            border: 3px solid #667eea;
+        }
+
+        .photo-preview.active {
+            display: block;
+        }
+
+        /* Import status */
+        .import-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .import-status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .import-status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .import-status.loading {
+            display: block;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* Lifestyle grid */
+        .lifestyle-group {
+            margin-bottom: 20px;
+        }
+
+        .lifestyle-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .lifestyle-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        /* Results display */
+        .results {
+            display: none;
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .results h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .results pre {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            background: #28a745;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .checkbox-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Friend Finder</h1>
+            <p>Let's build your profile!</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <form id="questionnaireForm">
+            
+            <!-- PROFILE SIGN-UP SECTION -->
+            
+            <!-- Basic Info -->
+            <div class="question-section">
+                <h2>Basic Information</h2>
+                
+                <div class="question">
+                    <label>Full Name *</label>
+                    <input type="text" name="fullName" class="text-input" required placeholder="Enter your full name">
+                </div>
+
+                <div class="question">
+                    <label>Email *</label>
+                    <input type="email" name="email" class="text-input" required placeholder="your.email@example.com">
+                </div>
+
+                <div class="question">
+                    <label>Password *</label>
+                    <input type="password" name="password" class="text-input" required placeholder="Create a strong password" minlength="8">
+                </div>
+
+                <div class="question">
+                    <label>Date of Birth *</label>
+                    <input type="date" name="dob" class="text-input" required>
+                </div>
+
+                <div class="question">
+                    <label>Gender *</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="gender1" name="gender" value="Male" required>
+                            <label for="gender1">Male</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="gender2" name="gender" value="Female">
+                            <label for="gender2">Female</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="gender3" name="gender" value="Non-binary">
+                            <label for="gender3">Non-binary</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="gender4" name="gender" value="Prefer not to say">
+                            <label for="gender4">Prefer not to say</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <label>Location (City, State) *</label>
+                    <input type="text" name="location" class="text-input" required placeholder="e.g., New York, NY">
+                </div>
+
+                <div class="question">
+                    <label>Profile Photo</label>
+                    <input type="file" name="profilePhoto" class="file-input" accept="image/*">
+                    <div id="photoPreview" class="photo-preview"></div>
+                </div>
+            </div>
+
+            <!-- Import from LinkedIn (Claude) -->
+            <div class="question-section">
+                <h2>Import from LinkedIn (Claude AI)</h2>
+                <p style="color: #666; margin-bottom: 15px;">Paste a LinkedIn profile URL. Claude will fetch and extract all info in tabular format.</p>
+                <div class="question">
+                    <label>LinkedIn Profile URL</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="url" id="linkedinImportUrl" class="text-input" placeholder="https://www.linkedin.com/in/username" style="flex: 1; min-width: 250px;">
+                        <button type="button" id="importLinkedInBtn" class="btn-primary">Import with Claude</button>
+                    </div>
+                    <div id="linkedinImportStatus" class="import-status"></div>
+                    <div id="linkedinExtractedData" class="results" style="margin-top: 15px; display: none;">
+                        <h3 style="color: #667eea; margin-bottom: 10px;">Extracted Profile Data (Tabular)</h3>
+                        <div id="tabularOutput" style="background: white; padding: 20px; border-radius: 10px; overflow-x: auto; font-size: 0.9em; line-height: 1.6; white-space: pre-wrap; max-height: 500px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social & Professional Links -->
+            <div class="question-section">
+                <h2>Help us know you better</h2>
+                
+                <div class="question">
+                    <label>
+                        LinkedIn URL
+                        <span class="question-hint">Optional</span>
+                    </label>
+                    <input type="url" name="linkedinUrl" id="linkedinUrl" class="text-input" placeholder="https://www.linkedin.com/in/yourprofile">
+                </div>
+
+                <div class="question">
+                    <label>
+                        Instagram Handle
+                        <span class="question-hint">Optional</span>
+                    </label>
+                    <input type="text" name="instagram" class="text-input" placeholder="@yourusername">
+                </div>
+
+                <div class="question">
+                    <label>
+                        Twitter/X Handle
+                        <span class="question-hint">Optional</span>
+                    </label>
+                    <input type="text" name="twitter" class="text-input" placeholder="@yourusername">
+                </div>
+            </div>
+
+            <!-- Professional Info -->
+            <div class="question-section">
+                <h2>Professional Information</h2>
+                
+                <div class="question">
+                    <label>Current Job Title</label>
+                    <input type="text" name="jobTitle" id="jobTitle" class="text-input" placeholder="e.g., Software Engineer">
+                </div>
+
+                <div class="question">
+                    <label>Company</label>
+                    <input type="text" name="company" id="company" class="text-input" placeholder="e.g., Google">
+                </div>
+
+                <div class="question">
+                    <label>Industry</label>
+                    <input type="text" name="industry" id="industry" class="text-input" placeholder="e.g., Technology, Finance, Healthcare">
+                </div>
+
+                <div class="question">
+                    <label>Years of Experience</label>
+                    <input type="text" name="experience" id="experience" class="text-input" placeholder="e.g., 5 years">
+                </div>
+
+                <div class="question">
+                    <label>Education (Degree, University)</label>
+                    <input type="text" name="education" id="education" class="text-input" placeholder="e.g., BS Computer Science, Stanford University">
+                </div>
+
+                <div class="question">
+                    <label>
+                        Top 5 Skills
+                        <span class="question-hint">Select up to 5 skills</span>
+                    </label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill1" name="skills" value="Python">
+                            <label for="skill1">Python</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill2" name="skills" value="JavaScript">
+                            <label for="skill2">JavaScript</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill3" name="skills" value="Data Science">
+                            <label for="skill3">Data Science</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill4" name="skills" value="Machine Learning">
+                            <label for="skill4">Machine Learning</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill5" name="skills" value="Project Management">
+                            <label for="skill5">Project Management</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill6" name="skills" value="Marketing">
+                            <label for="skill6">Marketing</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill7" name="skills" value="Design">
+                            <label for="skill7">Design</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill8" name="skills" value="Sales">
+                            <label for="skill8">Sales</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill9" name="skills" value="Leadership">
+                            <label for="skill9">Leadership</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill10" name="skills" value="Communication">
+                            <label for="skill10">Communication</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill11" name="skills" value="Analytics">
+                            <label for="skill11">Analytics</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill12" name="skills" value="SQL">
+                            <label for="skill12">SQL</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill13" name="skills" value="React">
+                            <label for="skill13">React</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill14" name="skills" value="Cloud Computing">
+                            <label for="skill14">Cloud Computing</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="skill15" name="skills" value="Finance">
+                            <label for="skill15">Finance</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q1: Interests -->
+            <div class="question-section">
+                <h2>About You</h2>
+                
+                <div class="question">
+                    <label>
+                        What are your main interests?
+                        <span class="question-hint">Select 3-8 options</span>
+                    </label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int1" name="interests" value="Sports & Fitness">
+                            <label for="int1">Sports & Fitness</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int2" name="interests" value="Travel & Adventure">
+                            <label for="int2">Travel & Adventure</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int3" name="interests" value="Food & Cooking">
+                            <label for="int3">Food & Cooking</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int4" name="interests" value="Music & Concerts">
+                            <label for="int4">Music & Concerts</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int5" name="interests" value="Movies & TV">
+                            <label for="int5">Movies & TV</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int6" name="interests" value="Reading & Books">
+                            <label for="int6">Reading & Books</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int7" name="interests" value="Gaming">
+                            <label for="int7">Gaming</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int8" name="interests" value="Art & Design">
+                            <label for="int8">Art & Design</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int9" name="interests" value="Photography">
+                            <label for="int9">Photography</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int10" name="interests" value="Technology">
+                            <label for="int10">Technology</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int11" name="interests" value="Entrepreneurship">
+                            <label for="int11">Entrepreneurship</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int12" name="interests" value="Volunteering">
+                            <label for="int12">Volunteering</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int13" name="interests" value="Outdoors & Nature">
+                            <label for="int13">Outdoors & Nature</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int14" name="interests" value="Fashion">
+                            <label for="int14">Fashion</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="int15" name="interests" value="Pets & Animals">
+                            <label for="int15">Pets & Animals</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q2: Ideal Weekend -->
+            <div class="question-section">
+                <div class="question">
+                    <label>How do you spend your ideal weekend?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="wk1" name="weekend" value="Exploring new places outdoors" required>
+                            <label for="wk1">Exploring new places outdoors</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="wk2" name="weekend" value="Relaxing at home with a good book/show">
+                            <label for="wk2">Relaxing at home with a good book/show</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="wk3" name="weekend" value="Socializing with friends at events">
+                            <label for="wk3">Socializing with friends at events</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="wk4" name="weekend" value="Working on personal projects/hobbies">
+                            <label for="wk4">Working on personal projects/hobbies</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="wk5" name="weekend" value="Trying new restaurants or cafes">
+                            <label for="wk5">Trying new restaurants or cafes</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="wk6" name="weekend" value="Attending concerts, shows, or cultural events">
+                            <label for="wk6">Attending concerts, shows, or cultural events</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q3: Social Energy -->
+            <div class="question-section">
+                <h2>Personality</h2>
+                
+                <div class="question">
+                    <label>Your social energy level:</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="se1" name="socialEnergy" value="Extrovert" required>
+                            <label for="se1">Extrovert - I thrive in large groups</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="se2" name="socialEnergy" value="Ambivert">
+                            <label for="se2">Ambivert - I enjoy both social time and alone time</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="se3" name="socialEnergy" value="Introvert">
+                            <label for="se3">Introvert - I prefer small groups or one-on-one</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q4: Communication Style -->
+            <div class="question-section">
+                <div class="question">
+                    <label>What's your communication style?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="cs1" name="commStyle" value="Direct and to the point" required>
+                            <label for="cs1">Direct and to the point</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="cs2" name="commStyle" value="Thoughtful and detailed">
+                            <label for="cs2">Thoughtful and detailed</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="cs3" name="commStyle" value="Casual and spontaneous">
+                            <label for="cs3">Casual and spontaneous</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="cs4" name="commStyle" value="Warm and empathetic">
+                            <label for="cs4">Warm and empathetic</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q5: Sense of Humor -->
+            <div class="question-section">
+                <div class="question">
+                    <label>
+                        Your sense of humor:
+                        <span class="question-hint">Select all that apply</span>
+                    </label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hum1" name="humor" value="Witty & sarcastic">
+                            <label for="hum1">Witty & sarcastic</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hum2" name="humor" value="Silly & goofy">
+                            <label for="hum2">Silly & goofy</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hum3" name="humor" value="Dark humor">
+                            <label for="hum3">Dark humor</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hum4" name="humor" value="Puns & wordplay">
+                            <label for="hum4">Puns & wordplay</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hum5" name="humor" value="Observational">
+                            <label for="hum5">Observational</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hum6" name="humor" value="Dry humor">
+                            <label for="hum6">Dry humor</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q6: Values -->
+            <div class="question-section">
+                <h2>Values & Lifestyle</h2>
+                
+                <div class="question">
+                    <label>
+                        What matters most to you?
+                        <span class="question-hint">Drag to rank your top 3</span>
+                    </label>
+                    <div class="ranking-list" id="valuesList">
+                        <div class="ranking-item" draggable="true" data-value="Career growth & ambition">
+                            <span class="ranking-number">1</span>
+                            <span>Career growth & ambition</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Work-life balance">
+                            <span class="ranking-number">2</span>
+                            <span>Work-life balance</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Family & relationships">
+                            <span class="ranking-number">3</span>
+                            <span>Family & relationships</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Health & wellness">
+                            <span class="ranking-number">4</span>
+                            <span>Health & wellness</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Creativity & self-expression">
+                            <span class="ranking-number">5</span>
+                            <span>Creativity & self-expression</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Adventure & new experiences">
+                            <span class="ranking-number">6</span>
+                            <span>Adventure & new experiences</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Financial stability">
+                            <span class="ranking-number">7</span>
+                            <span>Financial stability</span>
+                        </div>
+                        <div class="ranking-item" draggable="true" data-value="Making a difference/impact">
+                            <span class="ranking-number">8</span>
+                            <span>Making a difference/impact</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q7: Lifestyle -->
+            <div class="question-section">
+                <div class="question">
+                    <label>Your lifestyle:</label>
+                    
+                    <div class="lifestyle-group">
+                        <span class="lifestyle-label">Fitness:</span>
+                        <div class="lifestyle-options">
+                            <div class="radio-item">
+                                <input type="radio" id="fit1" name="fitness" value="Gym regular" required>
+                                <label for="fit1">Gym regular</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="fit2" name="fitness" value="Occasional">
+                                <label for="fit2">Occasional</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="fit3" name="fitness" value="Not my thing">
+                                <label for="fit3">Not my thing</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lifestyle-group">
+                        <span class="lifestyle-label">Drinking:</span>
+                        <div class="lifestyle-options">
+                            <div class="radio-item">
+                                <input type="radio" id="drink1" name="drinking" value="Socially" required>
+                                <label for="drink1">Socially</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="drink2" name="drinking" value="Rarely">
+                                <label for="drink2">Rarely</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="drink3" name="drinking" value="Never">
+                                <label for="drink3">Never</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lifestyle-group">
+                        <span class="lifestyle-label">Smoking:</span>
+                        <div class="lifestyle-options">
+                            <div class="radio-item">
+                                <input type="radio" id="smoke1" name="smoking" value="Yes" required>
+                                <label for="smoke1">Yes</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="smoke2" name="smoking" value="No">
+                                <label for="smoke2">No</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="smoke3" name="smoking" value="Occasionally">
+                                <label for="smoke3">Occasionally</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lifestyle-group">
+                        <span class="lifestyle-label">Pets:</span>
+                        <div class="lifestyle-options">
+                            <div class="radio-item">
+                                <input type="radio" id="pet1" name="pets" value="Have pets" required>
+                                <label for="pet1">Have pets</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="pet2" name="pets" value="Love pets">
+                                <label for="pet2">Love pets</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="pet3" name="pets" value="Allergic/Not interested">
+                                <label for="pet3">Allergic/Not interested</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q8: Evening Plans -->
+            <div class="question-section">
+                <div class="question">
+                    <label>Ideal evening plans:</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="eve1" name="evening" value="Dinner party with close friends" required>
+                            <label for="eve1">Dinner party with close friends</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="eve2" name="evening" value="Trying a new restaurant or bar">
+                            <label for="eve2">Trying a new restaurant or bar</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="eve3" name="evening" value="Netflix and chill at home">
+                            <label for="eve3">Netflix and chill at home</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="eve4" name="evening" value="Attending an event (concert, sports, etc.)">
+                            <label for="eve4">Attending an event (concert, sports, etc.)</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="eve5" name="evening" value="Working out or being active">
+                            <label for="eve5">Working out or being active</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="eve6" name="evening" value="Working on a side project">
+                            <label for="eve6">Working on a side project</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q9: Looking For -->
+            <div class="question-section">
+                <h2>Connection Preferences</h2>
+                
+                <div class="question">
+                    <label>
+                        What are you looking for?
+                        <span class="question-hint">Select all that apply</span>
+                    </label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="look1" name="lookingFor" value="New friends in my city">
+                            <label for="look1">New friends in my city</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="look2" name="lookingFor" value="Professional networking">
+                            <label for="look2">Professional networking</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="look3" name="lookingFor" value="Activity partners (gym, hiking, etc.)">
+                            <label for="look3">Activity partners (gym, hiking, etc.)</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="look4" name="lookingFor" value="Dating/Romantic connection">
+                            <label for="look4">Dating/Romantic connection</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="look5" name="lookingFor" value="Just seeing who's out there">
+                            <label for="look5">Just seeing who's out there</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q10: Deal-breakers -->
+            <div class="question-section">
+                <div class="question">
+                    <label>
+                        Deal-breakers:
+                        <span class="question-hint">Optional - select any</span>
+                    </label>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="deal1" name="dealbreakers" value="Smoking">
+                            <label for="deal1">Smoking</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="deal2" name="dealbreakers" value="Different political views">
+                            <label for="deal2">Different political views</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="deal3" name="dealbreakers" value="No ambition/career drive">
+                            <label for="deal3">No ambition/career drive</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="deal4" name="dealbreakers" value="Party lifestyle">
+                            <label for="deal4">Party lifestyle</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="deal5" name="dealbreakers" value="Long distance">
+                            <label for="deal5">Long distance</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="deal6" name="dealbreakers" value="Different values around family">
+                            <label for="deal6">Different values around family</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q11: Distance -->
+            <div class="question-section">
+                <div class="question">
+                    <label>How far are you willing to travel to meet?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="dist1" name="distance" value="Within 5 miles" required>
+                            <label for="dist1">Within 5 miles</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="dist2" name="distance" value="Within 15 miles">
+                            <label for="dist2">Within 15 miles</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="dist3" name="distance" value="Within 30 miles">
+                            <label for="dist3">Within 30 miles</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="dist4" name="distance" value="Anywhere in the city">
+                            <label for="dist4">Anywhere in the city</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="dist5" name="distance" value="Open to different cities">
+                            <label for="dist5">Open to different cities</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="button-group">
+                <button type="submit" class="btn-primary">Submit Profile 🚀</button>
+            </div>
+        </form>
+
+        <!-- Results Section -->
+        <div class="results" id="results">
+            <h2>✅ Your Profile Data</h2>
+            <pre id="resultsData"></pre>
+            <button class="btn-primary download-btn" onclick="downloadJSON()">Download JSON</button>
+            <button class="btn-secondary download-btn" onclick="downloadCSV()">Download CSV</button>
+        </div>
+    </div>
+
+    <script>
+        // Profile photo preview
+        document.querySelector('input[name="profilePhoto"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('photoPreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview">`;
+                    preview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Limit skills selection to 5
+        const skillCheckboxes = document.querySelectorAll('input[name="skills"]');
+        skillCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedCount = document.querySelectorAll('input[name="skills"]:checked').length;
+                if (checkedCount > 5) {
+                    this.checked = false;
+                    alert('You can only select up to 5 skills');
+                }
+            });
+        });
+
+        // Drag and drop for ranking
+        let draggedElement = null;
+
+        const rankingList = document.getElementById('valuesList');
+        const rankingItems = rankingList.querySelectorAll('.ranking-item');
+
+        rankingItems.forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                draggedElement = this;
+                this.style.opacity = '0.5';
+            });
+
+            item.addEventListener('dragend', function(e) {
+                this.style.opacity = '1';
+            });
+
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (draggedElement !== this) {
+                    const allItems = Array.from(rankingList.querySelectorAll('.ranking-item'));
+                    const draggedIndex = allItems.indexOf(draggedElement);
+                    const targetIndex = allItems.indexOf(this);
+
+                    if (draggedIndex < targetIndex) {
+                        this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                    } else {
+                        this.parentNode.insertBefore(draggedElement, this);
+                    }
+                    updateRankingNumbers();
+                }
+            });
+        });
+
+        function updateRankingNumbers() {
+            const items = rankingList.querySelectorAll('.ranking-item');
+            items.forEach((item, index) => {
+                item.querySelector('.ranking-number').textContent = index + 1;
+            });
+        }
+
+        // Progress bar update
+        function updateProgress() {
+            const form = document.getElementById('questionnaireForm');
+            const totalQuestions = 11;
+            let answeredQuestions = 0;
+
+            // Check radio groups
+            const radioGroups = ['weekend', 'socialEnergy', 'commStyle', 'fitness', 'drinking', 'smoking', 'pets', 'evening', 'distance'];
+            radioGroups.forEach(group => {
+                if (form.querySelector(`input[name="${group}"]:checked`)) {
+                    answeredQuestions++;
+                }
+            });
+
+            // Check interests (needs 3-8)
+            const interests = form.querySelectorAll('input[name="interests"]:checked');
+            if (interests.length >= 3 && interests.length <= 8) {
+                answeredQuestions++;
+            }
+
+            // Check humor (any selected)
+            const humor = form.querySelectorAll('input[name="humor"]:checked');
+            if (humor.length > 0) {
+                answeredQuestions++;
+            }
+
+            const progress = (answeredQuestions / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Listen for changes
+        document.getElementById('questionnaireForm').addEventListener('change', updateProgress);
+
+        // Form submission
+        let collectedData = [];
+
+        document.getElementById('questionnaireForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                timestamp: new Date().toISOString(),
+                
+                // Basic Info
+                profile: {
+                    fullName: formData.get('fullName'),
+                    email: formData.get('email'),
+                    dob: formData.get('dob'),
+                    gender: formData.get('gender'),
+                    location: formData.get('location'),
+                    profilePhoto: formData.get('profilePhoto')?.name || null
+                },
+                
+                // Social Links
+                socialLinks: {
+                    linkedinUrl: formData.get('linkedinUrl'),
+                    instagram: formData.get('instagram'),
+                    twitter: formData.get('twitter')
+                },
+                
+                // Professional Info
+                professional: {
+                    jobTitle: formData.get('jobTitle'),
+                    company: formData.get('company'),
+                    industry: formData.get('industry'),
+                    experience: formData.get('experience'),
+                    education: formData.get('education'),
+                    skills: []
+                },
+                
+                // Questionnaire
+                interests: [],
+                weekend: formData.get('weekend'),
+                socialEnergy: formData.get('socialEnergy'),
+                communicationStyle: formData.get('commStyle'),
+                humor: [],
+                values: [],
+                lifestyle: {
+                    fitness: formData.get('fitness'),
+                    drinking: formData.get('drinking'),
+                    smoking: formData.get('smoking'),
+                    pets: formData.get('pets')
+                },
+                evening: formData.get('evening'),
+                lookingFor: [],
+                dealbreakers: [],
+                distance: formData.get('distance')
+            };
+
+            // Get skills
+            formData.getAll('skills').forEach(item => {
+                data.professional.skills.push(item);
+            });
+
+            // Get interests
+            formData.getAll('interests').forEach(item => {
+                data.interests.push(item);
+            });
+
+            // Get humor
+            formData.getAll('humor').forEach(item => {
+                data.humor.push(item);
+            });
+
+            // Get values ranking (top 3)
+            const valueItems = rankingList.querySelectorAll('.ranking-item');
+            for (let i = 0; i < 3 && i < valueItems.length; i++) {
+                data.values.push(valueItems[i].getAttribute('data-value'));
+            }
+
+            // Get looking for
+            formData.getAll('lookingFor').forEach(item => {
+                data.lookingFor.push(item);
+            });
+
+            // Get dealbreakers
+            formData.getAll('dealbreakers').forEach(item => {
+                data.dealbreakers.push(item);
+            });
+
+            // Add to collection
+            collectedData.push(data);
+
+            // Display results
+            document.getElementById('resultsData').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('results').style.display = 'block';
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+
+            // Store in localStorage
+            localStorage.setItem('questionnaireData', JSON.stringify(collectedData));
+
+            alert('✅ Profile submitted successfully!');
+        });
+
+        // Download JSON
+        function downloadJSON() {
+            const dataStr = JSON.stringify(collectedData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'questionnaire_data_' + Date.now() + '.json';
+            link.click();
+        }
+
+        // Download CSV
+        function downloadCSV() {
+            if (collectedData.length === 0) return;
+
+            // CSV headers
+            let csv = 'Timestamp,Full Name,Email,DOB,Gender,Location,LinkedIn,Instagram,Twitter,Job Title,Company,Industry,Experience,Education,Skills,Interests,Weekend,Social Energy,Communication Style,Humor,Top Values,Fitness,Drinking,Smoking,Pets,Evening,Looking For,Dealbreakers,Distance\n';
+
+            // CSV rows
+            collectedData.forEach(data => {
+                csv += `"${data.timestamp}",`;
+                csv += `"${data.profile.fullName}",`;
+                csv += `"${data.profile.email}",`;
+                csv += `"${data.profile.dob}",`;
+                csv += `"${data.profile.gender}",`;
+                csv += `"${data.profile.location}",`;
+                csv += `"${data.socialLinks.linkedinUrl || ''}",`;
+                csv += `"${data.socialLinks.instagram || ''}",`;
+                csv += `"${data.socialLinks.twitter || ''}",`;
+                csv += `"${data.professional.jobTitle || ''}",`;
+                csv += `"${data.professional.company || ''}",`;
+                csv += `"${data.professional.industry || ''}",`;
+                csv += `"${data.professional.experience || ''}",`;
+                csv += `"${data.professional.education || ''}",`;
+                csv += `"${data.professional.skills.join('; ')}",`;
+                csv += `"${data.interests.join('; ')}",`;
+                csv += `"${data.weekend}",`;
+                csv += `"${data.socialEnergy}",`;
+                csv += `"${data.communicationStyle}",`;
+                csv += `"${data.humor.join('; ')}",`;
+                csv += `"${data.values.join('; ')}",`;
+                csv += `"${data.lifestyle.fitness}",`;
+                csv += `"${data.lifestyle.drinking}",`;
+                csv += `"${data.lifestyle.smoking}",`;
+                csv += `"${data.lifestyle.pets}",`;
+                csv += `"${data.evening}",`;
+                csv += `"${data.lookingFor.join('; ')}",`;
+                csv += `"${data.dealbreakers.join('; ')}",`;
+                csv += `"${data.distance}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'questionnaire_data_' + Date.now() + '.csv';
+            link.click();
+        }
+
+        // Load existing data from localStorage
+        window.addEventListener('load', function() {
+            const stored = localStorage.getItem('questionnaireData');
+            if (stored) {
+                collectedData = JSON.parse(stored);
+                console.log('Loaded ' + collectedData.length + ' previous submissions');
+            }
+        });
+
+        // Import from LinkedIn (Claude API)
+        document.getElementById('importLinkedInBtn').addEventListener('click', async function() {
+            const urlInput = document.getElementById('linkedinImportUrl');
+            const statusEl = document.getElementById('linkedinImportStatus');
+            const extractedDiv = document.getElementById('linkedinExtractedData');
+            const outputEl = document.getElementById('tabularOutput');
+            const btn = this;
+
+            const linkedinUrl = urlInput.value.trim();
+            if (!linkedinUrl) {
+                statusEl.textContent = 'Please enter a LinkedIn URL';
+                statusEl.className = 'import-status error';
+                statusEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            statusEl.textContent = 'Fetching profile and extracting with Claude...';
+            statusEl.className = 'import-status loading';
+            statusEl.style.display = 'block';
+            extractedDiv.style.display = 'none';
+
+            try {
+                const apiUrl = window.location.origin.includes('localhost') 
+                    ? 'http://localhost:3000' 
+                    : window.location.origin;
+                const res = await fetch(`${apiUrl}/api/import-linkedin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ linkedinUrl })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Import failed');
+                }
+
+                statusEl.textContent = 'Successfully extracted profile data!';
+                statusEl.className = 'import-status success';
+                const rawData = data.tabularData || 'No data extracted.';
+                outputEl.innerHTML = typeof marked !== 'undefined' 
+                    ? (marked.parse || marked)(rawData) 
+                    : rawData.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                extractedDiv.style.display = 'block';
+
+                // Also populate the LinkedIn URL field in the form
+                document.getElementById('linkedinUrl').value = data.linkedinUrl || linkedinUrl;
+            } catch (err) {
+                statusEl.textContent = 'Error: ' + err.message;
+                statusEl.className = 'import-status error';
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

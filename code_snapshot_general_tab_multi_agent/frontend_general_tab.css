@@ -1,0 +1,21 @@
+/**
+ * Add to backend/static/styles.css after .empty-msg { ... }
+ */
+
+.btn-generate-general {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #6B46C1, #9333EA);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-generate-general:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.btn-generate-general:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

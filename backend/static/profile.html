@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proxy AI – Create your profile</title>
+  <link rel="stylesheet" href="/static/profile.css" />
+</head>
+<body>
+  <div class="profile-page">
+    <header class="profile-header">
+      <a href="/" class="back-link">← Back to Proxy AI</a>
+      <h1>🤖 Proxy AI</h1>
+      <p>Create your profile – then answer questions by voice and create your AI twin.</p>
+    </header>
+
+    <div class="profile-container">
+      <form id="questionnaireForm">
+        <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+        <section class="question-section">
+          <h2>Basic Information</h2>
+          <div class="question">
+            <label>Full Name *</label>
+            <input type="text" name="fullName" class="text-input" required placeholder="Enter your full name" />
+          </div>
+          <div class="question">
+            <label>Email *</label>
+            <input type="email" name="email" class="text-input" required placeholder="your.email@example.com" />
+          </div>
+          <div class="question">
+            <label>Location (City, State)</label>
+            <input type="text" name="location" class="text-input" placeholder="e.g., New York, NY" />
+          </div>
+        </section>
+        <section class="question-section">
+          <h2>Professional</h2>
+          <div class="question">
+            <label>Job Title</label>
+            <input type="text" name="jobTitle" class="text-input" placeholder="e.g., Software Engineer" />
+          </div>
+          <div class="question">
+            <label>Company</label>
+            <input type="text" name="company" class="text-input" placeholder="e.g., Google" />
+          </div>
+          <div class="question">
+            <label>Top skills (comma-separated)</label>
+            <input type="text" name="skills" class="text-input" placeholder="Python, JavaScript, Design" />
+          </div>
+        </section>
+        <section class="question-section">
+          <h2>About you</h2>
+          <div class="question">
+            <label>Main interests (comma-separated)</label>
+            <input type="text" name="interests" class="text-input" placeholder="Sports, Travel, Tech, Music" />
+          </div>
+          <div class="question">
+            <label>Ideal weekend</label>
+            <select name="weekend" class="text-input">
+              <option value="">Select…</option>
+              <option value="Exploring outdoors">Exploring outdoors</option>
+              <option value="Relaxing at home">Relaxing at home</option>
+              <option value="Socializing with friends">Socializing with friends</option>
+              <option value="Personal projects">Personal projects</option>
+            </select>
+          </div>
+          <div class="question">
+            <label>Social energy</label>
+            <select name="socialEnergy" class="text-input">
+              <option value="">Select…</option>
+              <option value="Extrovert">Extrovert</option>
+              <option value="Ambivert">Ambivert</option>
+              <option value="Introvert">Introvert</option>
+            </select>
+          </div>
+          <div class="question">
+            <label>Communication style</label>
+            <select name="commStyle" class="text-input">
+              <option value="">Select…</option>
+              <option value="Direct">Direct</option>
+              <option value="Thoughtful">Thoughtful</option>
+              <option value="Casual">Casual</option>
+              <option value="Warm">Warm</option>
+            </select>
+          </div>
+        </section>
+        <section class="question-section">
+          <h2>What you're looking for</h2>
+          <div class="question">
+            <label>Seeking</label>
+            <input type="text" name="seeking" class="text-input" placeholder="e.g., New friends, professional networking" />
+          </div>
+        </section>
+        <div class="button-group">
+          <button type="submit" class="btn-primary">Save profile</button>
+        </div>
+      </form>
+
+      <div id="after-submit" class="after-submit" style="display: none;">
+        <h2>✅ Profile saved</h2>
+        <p><strong>Voice interview:</strong> Answer the questions below by talking. Click Record, speak your answer, then Stop. Your answers will be transcribed and used to create your persona.</p>
+        <div id="voice-questions" class="voice-questions"></div>
+        <div class="button-group">
+          <button type="button" id="createPersonaBtn" class="btn-primary">Create my persona</button>
+        </div>
+        <p id="createPersonaStatus" class="status-msg"></p>
+      </div>
+    </div>
+  </div>
+  <script src="/static/profile.js"></script>
+</body>
+</html>

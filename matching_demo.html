@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Finder - Matching Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+        }
+
+        .user-selector {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .user-card {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            min-width: 200px;
+        }
+
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .user-card.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .user-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .user-card p {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .matches-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .match-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .match-header h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .match-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .match-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .match-score {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .match-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .score-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .match-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .shared-interests {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .interest-tag {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .conversation-preview {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+
+        .conversation-preview h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .conversation-preview p {
+            color: #856404;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .no-selection {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .no-selection h3 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .match-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Friend Finder</h1>
+            <p>Discover your perfect matches based on personality, interests, and values</p>
+        </div>
+
+        <div class="user-selector" id="userSelector">
+            <!-- User cards will be inserted here -->
+        </div>
+
+        <div class="matches-container" id="matchesContainer">
+            <div class="no-selection">
+                <h3>👆 Select a user above to see their matches!</h3>
+                <p>We'll show you compatibility scores and shared interests</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load the JSON data (in production, this would come from your backend)
+        const users = [
+            {
+                "timestamp": "2026-02-14T18:00:12.493Z",
+                "profile": {
+                    "fullName": "Anny P",
+                    "email": "ap8884@nyu.edu",
+                    "dob": "2001-01-01",
+                    "gender": "Female",
+                    "location": "New York, NY",
+                    "profilePhoto": "anagha_cat.jpg"
+                },
+                "socialLinks": {
+                    "linkedinUrl": "https://www.linkedin.com/in/anagha-palandye",
+                    "instagram": "",
+                    "twitter": ""
+                },
+                "professional": {
+                    "jobTitle": "AI research",
+                    "company": "my_own",
+                    "industry": "technology",
+                    "experience": "5",
+                    "education": "MS Data Science, NYU",
+                    "skills": ["Python", "Data Science", "Machine Learning", "Analytics", "SQL"]
+                },
+                "interests": ["Sports & Fitness", "Travel & Adventure", "Food & Cooking", "Fashion", "Pets & Animals"],
+                "weekend": "Working on personal projects/hobbies",
+                "socialEnergy": "Ambivert",
+                "communicationStyle": "Thoughtful and detailed",
+                "humor": ["Observational"],
+                "values": ["Career growth & ambition", "Work-life balance", "Financial stability"],
+                "lifestyle": {
+                    "fitness": "Gym regular",
+                    "drinking": "Socially",
+                    "smoking": "No",
+                    "pets": "Love pets"
+                },
+                "evening": "Trying a new restaurant or bar",
+                "lookingFor": ["New friends in my city", "Professional networking", "Activity partners (gym, hiking, etc.)", "Dating/Romantic connection", "Just seeing who's out there"],
+                "dealbreakers": ["Different political views", "No ambition/career drive"],
+                "distance": "Open to different cities"
+            },
+            {
+                "timestamp": "2026-02-14T18:13:52.742Z",
+                "profile": {
+                    "fullName": "Bean",
+                    "email": "qwerty@gmail.com",
+                    "dob": "2006-01-01",
+                    "gender": "Female",
+                    "location": "New York, NY",
+                    "profilePhoto": null
+                },
+                "socialLinks": {
+                    "linkedinUrl": "",
+                    "instagram": "",
+                    "twitter": ""
+                },
+                "professional": {
+                    "jobTitle": "Designer",
+                    "company": "Vogue",
+                    "industry": "Fashion",
+                    "experience": "4",
+                    "education": "BS in Design",
+                    "skills": ["Project Management", "Marketing", "Design", "Sales", "Communication"]
+                },
+                "interests": ["Movies & TV", "Gaming", "Art & Design", "Entrepreneurship", "Fashion"],
+                "weekend": "Attending concerts, shows, or cultural events",
+                "socialEnergy": "Extrovert",
+                "communicationStyle": "Casual and spontaneous",
+                "humor": ["Dark humor"],
+                "values": ["Career growth & ambition", "Work-life balance", "Family & relationships"],
+                "lifestyle": {
+                    "fitness": "Occasional",
+                    "drinking": "Rarely",
+                    "smoking": "Occasionally",
+                    "pets": "Allergic/Not interested"
+                },
+                "evening": "Netflix and chill at home",
+                "lookingFor": ["New friends in my city"],
+                "dealbreakers": ["Long distance"],
+                "distance": "Open to different cities"
+            },
+            {
+                "timestamp": "2026-02-14T18:04:31.012Z",
+                "profile": {
+                    "fullName": "Gail",
+                    "email": "gauravatavale@gmail.com",
+                    "dob": "1999-01-01",
+                    "gender": "Male",
+                    "location": "New York, NY",
+                    "profilePhoto": null
+                },
+                "socialLinks": {
+                    "linkedinUrl": "https://www.linkedin.com/in/gauravatavale/",
+                    "instagram": "",
+                    "twitter": ""
+                },
+                "professional": {
+                    "jobTitle": "AI Research",
+                    "company": "Amex",
+                    "industry": "Fianace",
+                    "experience": "9",
+                    "education": "MS in Data Science, IUB",
+                    "skills": ["Python", "Data Science", "Machine Learning", "Leadership", "SQL"]
+                },
+                "interests": ["Sports & Fitness", "Travel & Adventure", "Technology", "Outdoors & Nature", "Pets & Animals"],
+                "weekend": "Working on personal projects/hobbies",
+                "socialEnergy": "Extrovert",
+                "communicationStyle": "Casual and spontaneous",
+                "humor": ["Witty & sarcastic"],
+                "values": ["Financial stability", "Health & wellness", "Career growth & ambition"],
+                "lifestyle": {
+                    "fitness": "Gym regular",
+                    "drinking": "Rarely",
+                    "smoking": "No",
+                    "pets": "Love pets"
+                },
+                "evening": "Attending an event (concert, sports, etc.)",
+                "lookingFor": ["New friends in my city", "Activity partners (gym, hiking, etc.)", "Dating/Romantic connection", "Just seeing who's out there"],
+                "dealbreakers": ["Different values around family"],
+                "distance": "Anywhere in the city"
+            },
+            {
+                "timestamp": "2026-02-14T18:08:59.909Z",
+                "profile": {
+                    "fullName": "Neil",
+                    "email": "abcd@gmail.com",
+                    "dob": "2003-01-01",
+                    "gender": "Male",
+                    "location": "New York, NY",
+                    "profilePhoto": null
+                },
+                "socialLinks": {
+                    "linkedinUrl": "https://www.linkedin.com/in/nirbhayareddy/",
+                    "instagram": "",
+                    "twitter": ""
+                },
+                "professional": {
+                    "jobTitle": "Data and Application Intern",
+                    "company": "ABCD",
+                    "industry": "Healthcare",
+                    "experience": "3",
+                    "education": "MS in Computer Science, NYU",
+                    "skills": ["JavaScript", "Project Management", "Design", "SQL", "React"]
+                },
+                "interests": ["Sports & Fitness", "Movies & TV", "Gaming", "Photography", "Outdoors & Nature"],
+                "weekend": "Socializing with friends at events",
+                "socialEnergy": "Introvert",
+                "communicationStyle": "Warm and empathetic",
+                "humor": ["Silly & goofy"],
+                "values": ["Career growth & ambition", "Health & wellness", "Work-life balance"],
+                "lifestyle": {
+                    "fitness": "Gym regular",
+                    "drinking": "Rarely",
+                    "smoking": "No",
+                    "pets": "Have pets"
+                },
+                "evening": "Working out or being active",
+                "lookingFor": ["Professional networking"],
+                "dealbreakers": ["Different political views"],
+                "distance": "Anywhere in the city"
+            }
+        ];
+
+        // Calculate compatibility score between two users
+        function calculateCompatibility(user1, user2) {
+            let score = 0;
+            let maxScore = 0;
+            let reasons = [];
+
+            // Shared interests (weight: 20 points)
+            maxScore += 20;
+            const sharedInterests = user1.interests.filter(i => user2.interests.includes(i));
+            const interestScore = (sharedInterests.length / Math.max(user1.interests.length, user2.interests.length)) * 20;
+            score += interestScore;
+            if (sharedInterests.length > 0) {
+                reasons.push({
+                    type: 'interests',
+                    value: sharedInterests,
+                    message: `${sharedInterests.length} shared interests`
+                });
+            }
+
+            // Shared values (weight: 25 points)
+            maxScore += 25;
+            const sharedValues = user1.values.filter(v => user2.values.includes(v));
+            const valueScore = (sharedValues.length / 3) * 25;
+            score += valueScore;
+            if (sharedValues.length > 0) {
+                reasons.push({
+                    type: 'values',
+                    value: sharedValues,
+                    message: `${sharedValues.length} shared values`
+                });
+            }
+
+            // Similar lifestyle (weight: 15 points)
+            maxScore += 15;
+            let lifestyleMatches = 0;
+            if (user1.lifestyle.fitness === user2.lifestyle.fitness) lifestyleMatches++;
+            if (user1.lifestyle.pets === user2.lifestyle.pets || 
+                (user1.lifestyle.pets.includes('pets') && user2.lifestyle.pets.includes('pets'))) lifestyleMatches++;
+            if (user1.lifestyle.smoking === user2.lifestyle.smoking) lifestyleMatches++;
+            score += (lifestyleMatches / 3) * 15;
+
+            // Social energy compatibility (weight: 10 points)
+            maxScore += 10;
+            if (user1.socialEnergy === user2.socialEnergy || 
+                user1.socialEnergy === 'Ambivert' || 
+                user2.socialEnergy === 'Ambivert') {
+                score += 10;
+                reasons.push({
+                    type: 'social',
+                    message: 'Compatible social energy levels'
+                });
+            }
+
+            // Communication style (weight: 10 points)
+            maxScore += 10;
+            if (user1.communicationStyle === user2.communicationStyle) {
+                score += 10;
+                reasons.push({
+                    type: 'communication',
+                    message: `Both prefer ${user1.communicationStyle.toLowerCase()} communication`
+                });
+            } else {
+                score += 5; // Partial credit for different but not conflicting
+            }
+
+            // Looking for overlap (weight: 10 points)
+            maxScore += 10;
+            const sharedGoals = user1.lookingFor.filter(g => user2.lookingFor.includes(g));
+            const goalScore = (sharedGoals.length / Math.max(user1.lookingFor.length, user2.lookingFor.length)) * 10;
+            score += goalScore;
+            if (sharedGoals.length > 0) {
+                reasons.push({
+                    type: 'goals',
+                    value: sharedGoals,
+                    message: `Both looking for: ${sharedGoals.join(', ')}`
+                });
+            }
+
+            // Professional alignment (weight: 10 points)
+            maxScore += 10;
+            const sharedSkills = user1.professional.skills.filter(s => user2.professional.skills.includes(s));
+            if (sharedSkills.length > 0) {
+                score += (sharedSkills.length / 5) * 10;
+                reasons.push({
+                    type: 'professional',
+                    value: sharedSkills,
+                    message: `${sharedSkills.length} shared professional skills`
+                });
+            }
+
+            // Convert to percentage
+            const percentage = Math.round((score / maxScore) * 100);
+
+            return {
+                score: percentage,
+                reasons: reasons,
+                sharedInterests: sharedInterests,
+                sharedValues: sharedValues
+            };
+        }
+
+        // Render user selector
+        function renderUserSelector() {
+            const selector = document.getElementById('userSelector');
+            selector.innerHTML = users.map((user, index) => `
+                <div class="user-card" onclick="selectUser(${index})">
+                    <h3>${user.profile.fullName}</h3>
+                    <p>${user.professional.jobTitle}</p>
+                    <p>${user.profile.location}</p>
+                </div>
+            `).join('');
+        }
+
+        // Select a user and show their matches
+        function selectUser(userIndex) {
+            const selectedUser = users[userIndex];
+            
+            // Update active state
+            document.querySelectorAll('.user-card').forEach((card, idx) => {
+                if (idx === userIndex) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+
+            // Calculate matches with other users
+            const matches = users
+                .map((user, index) => {
+                    if (index === userIndex) return null;
+                    const compatibility = calculateCompatibility(selectedUser, user);
+                    return {
+                        user: user,
+                        compatibility: compatibility
+                    };
+                })
+                .filter(m => m !== null)
+                .sort((a, b) => b.compatibility.score - a.compatibility.score);
+
+            // Render matches
+            renderMatches(selectedUser, matches);
+        }
+
+        // Render matches
+        function renderMatches(selectedUser, matches) {
+            const container = document.getElementById('matchesContainer');
+            
+            container.innerHTML = `
+                <div class="match-header">
+                    <h2>Matches for ${selectedUser.profile.fullName}</h2>
+                    <p>Here are your top connections based on compatibility</p>
+                </div>
+                ${matches.map(match => `
+                    <div class="match-card">
+                        <div class="match-score">
+                            <div class="match-name">${match.user.profile.fullName}</div>
+                            <div class="score-badge">${match.compatibility.score}% Match</div>
+                        </div>
+
+                        <div class="match-details">
+                            <div class="detail-item">
+                                <div class="detail-label">👤 About</div>
+                                <div class="detail-value">${match.user.professional.jobTitle} at ${match.user.professional.company}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">📍 Location</div>
+                                <div class="detail-value">${match.user.profile.location}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">⚡ Social Energy</div>
+                                <div class="detail-value">${match.user.socialEnergy}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">💬 Communication</div>
+                                <div class="detail-value">${match.user.communicationStyle}</div>
+                            </div>
+                        </div>
+
+                        ${match.compatibility.sharedInterests.length > 0 ? `
+                            <div style="margin-top: 15px;">
+                                <strong>🎯 Shared Interests:</strong>
+                                <div class="shared-interests">
+                                    ${match.compatibility.sharedInterests.map(interest => 
+                                        `<span class="interest-tag">${interest}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${match.compatibility.sharedValues.length > 0 ? `
+                            <div style="margin-top: 15px;">
+                                <strong>💎 Shared Values:</strong>
+                                <div class="shared-interests">
+                                    ${match.compatibility.sharedValues.map(value => 
+                                        `<span class="interest-tag" style="background: #764ba2;">${value}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="conversation-preview">
+                            <h4>💡 Why you'll connect</h4>
+                            <p>${getConnectionReason(match.compatibility)}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Generate connection reason
+        function getConnectionReason(compatibility) {
+            const reasons = compatibility.reasons.map(r => r.message);
+            if (reasons.length === 0) return "You have complementary personalities that could lead to interesting conversations!";
+            return reasons.slice(0, 3).join('. ') + '.';
+        }
+
+        // Initialize
+        renderUserSelector();
+    </script>
+</body>
+</html>
