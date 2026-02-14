@@ -72,10 +72,7 @@ function loadChat(group) {
     .then(data => {
       if (!data || !data.messages || data.messages.length === 0) {
         if (group === 'general') {
-          chatMessagesEl.innerHTML =
-            '<p class="empty-msg">No multi-agent conversation yet.</p>' +
-            '<button type="button" class="btn-generate-general" id="btn-generate-general">Generate conversation (multi-agent)</button>';
-          document.getElementById('btn-generate-general').addEventListener('click', generateGeneralConversation);
+          startGeneralStream();
           return;
         }
         chatMessagesEl.innerHTML = '<p class="empty-msg">No conversation for this topic yet.</p>';
@@ -88,31 +85,93 @@ function loadChat(group) {
     });
 }
 
-function generateGeneralConversation() {
-  const btn = document.getElementById('btn-generate-general');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Generating…';
-  }
-  chatMessagesEl.innerHTML = '<p class="empty-msg">Generating multi-agent chat (personas taking turns)…</p>';
-  fetch(API + '/api/conversations/general/generate?turns=10', { method: 'POST' })
-    .then(r => {
+function startGeneralStream() {
+  chatMessagesEl.innerHTML = '<p class="empty-msg">Loading conversation… messages will stream with 5s between each.</p>';
+  const turns = 10;
+  const pauseSeconds = 5;
+  fetch(API + '/api/conversations/general/stream?turns=' + turns + '&pause_seconds=' + pauseSeconds)
+    .then(function(r) {
       if (!r.ok) throw new Error(r.statusText);
-      return r.json();
+      if (!r.body) throw new Error('Streaming not supported');
+      return r.body.getReader();
     })
-    .then(res => {
-      const messages = res.messages || [];
-      if (messages.length === 0) {
-        chatMessagesEl.innerHTML = '<p class="empty-msg">No messages generated. Add personas first (Profile → Create persona).</p>';
-        return;
+    .then(function(reader) {
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentMsgEl = null;
+      let currentBubbleEl = null;
+
+      function appendMessageBubble(speaker) {
+        const wrap = document.createElement('div');
+        wrap.className = 'chat-msg streaming-msg';
+        wrap.innerHTML =
+          '<span class="speaker">' + escapeHtml(speaker) + '</span>' +
+          '<span class="bubble"></span>';
+        chatMessagesEl.appendChild(wrap);
+        currentMsgEl = wrap;
+        currentBubbleEl = wrap.querySelector('.bubble');
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       }
-      chatMessagesEl.innerHTML = renderMessages(messages, false);
+
+      function processLine(line) {
+        if (line.indexOf('data: ') !== 0) return;
+        const raw = line.slice(6).trim();
+        if (raw === '') return;
+        try {
+          const ev = JSON.parse(raw);
+          if (ev.type === 'error') {
+            chatMessagesEl.innerHTML = '<p class="empty-msg">Error: ' + escapeHtml(ev.detail || 'Unknown') + '</p>';
+            return;
+          }
+          if (ev.type === 'message_start') {
+            chatMessagesEl.querySelector('.empty-msg') && chatMessagesEl.querySelector('.empty-msg').remove();
+            appendMessageBubble(ev.speaker || 'Unknown');
+            return;
+          }
+          if (ev.type === 'chunk' && currentBubbleEl && ev.delta) {
+            currentBubbleEl.textContent += ev.delta;
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+            return;
+          }
+          if (ev.type === 'message_end') {
+            if (currentBubbleEl && ev.text) currentBubbleEl.textContent = ev.text;
+            if (currentMsgEl) currentMsgEl.classList.remove('streaming-msg');
+            currentMsgEl = null;
+            currentBubbleEl = null;
+            return;
+          }
+          if (ev.type === 'done') {
+            currentMsgEl = null;
+            currentBubbleEl = null;
+            return;
+          }
+        } catch (e) {}
+      }
+
+      function readChunk() {
+        reader.read().then(function(result) {
+          if (result.done) return;
+          buffer += decoder.decode(result.value, { stream: true });
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() || '';
+          parts.forEach(function(block) {
+            const line = block.split('\n').find(function(l) { return l.indexOf('data: ') === 0; });
+            if (line) processLine(line);
+          });
+          readChunk();
+        }).catch(function(err) {
+          chatMessagesEl.innerHTML += '<p class="empty-msg">Stream error: ' + escapeHtml(err.message) + '</p>';
+        });
+      }
+      readChunk();
     })
-    .catch(err => {
-      chatMessagesEl.innerHTML = '<p class="empty-msg">Error: ' + escapeHtml(err.message) + '</p>' +
-        '<button type="button" class="btn-generate-general" id="btn-generate-general">Retry</button>';
-      document.getElementById('btn-generate-general').addEventListener('click', generateGeneralConversation);
+    .catch(function(err) {
+      chatMessagesEl.innerHTML = '<p class="empty-msg">Error: ' + escapeHtml(err.message) + '. Need at least 2 personas (Profile → Create persona).</p>';
     });
+}
+
+function generateGeneralConversation() {
+  startGeneralStream();
 }
 
 function loadHumanChat() {

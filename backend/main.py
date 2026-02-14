@@ -6,13 +6,17 @@ Serves conversations (sports, ai, tech, human), personas, matches, and health.
 import json
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent
+# Load .env from backend/ so ANTHROPIC_API_KEY etc. are set when the server runs
+load_dotenv(BASE_DIR / ".env")
 CONVERSATIONS_DIR = BASE_DIR / "conversations"
 PERSONAS_DIR = BASE_DIR / "personas"
 MATCHES_FILE = BASE_DIR / "matches.json"
@@ -20,6 +24,21 @@ HUMAN_CONV_FILE = CONVERSATIONS_DIR / "human.json"
 PROFILE_FILE = BASE_DIR / "profile.json"
 CONNECTION_REQUESTS_FILE = BASE_DIR / "connection_requests.json"
 GENERAL_CONV_FILE = CONVERSATIONS_DIR / "general.json"
+
+# Gaurav's Agentic_social_gaurav: personas, history, bidding (exact replica for General tab stream)
+GAURAV_ROOT = BASE_DIR.parent / "Agentic_social_gaurav"
+GAURAV_PERSON_BUILDER = GAURAV_ROOT / "Personal_builder"
+GAURAV_HISTORY_FILE = GAURAV_ROOT / "conversational_history.txt"
+
+# Same dicts as run.py
+GAURAV_PERSON_ROLE = {
+    "Gaurav_Atavale": "Gaurav",
+    "Anagha_Palandye": "Anagha",
+    "Kanishkha_S": "Kanishkha",
+    "Nirbhay_R": "Nirbhay",
+}
+GAURAV_ROLE_PERSON = {v: k for k, v in GAURAV_PERSON_ROLE.items()}
+GAURAV_INITIAL_CREDITS = 30
 
 app = FastAPI(title="Proxy AI Backend")
 
@@ -204,6 +223,304 @@ async def generate_general_conversation(turns: int = 10):
     CONVERSATIONS_DIR.mkdir(parents=True, exist_ok=True)
     save_json(GENERAL_CONV_FILE, data)
     return {"status": "generated", "turns": turns, "messages": messages}
+
+
+def _stream_one_general_message(personas: list[dict], persona_index: int, history: list[dict]):
+    """Stream one message from the given persona using Claude; yields (speaker, full_text)."""
+    import os
+    from anthropic import Anthropic
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        yield None, "[ANTHROPIC_API_KEY not set]"
+        return
+    persona = personas[persona_index]
+    name = persona.get("name", "Unknown")
+    sys_prompt = _general_system_prompt(persona)
+    history_text = "\n".join(f"{m.get('speaker', '?')}: {m.get('text', '')}" for m in history[-10:])
+    user_content = f"Conversation so far:\n{history_text}\n\nYour turn. Reply as {name} (1-2 sentences only):"
+    full_text = ""
+    try:
+        client = Anthropic(api_key=api_key)
+        with client.messages.stream(
+            model="claude-sonnet-4-20250514",
+            max_tokens=256,
+            system=sys_prompt,
+            messages=[{"role": "user", "content": user_content}],
+        ) as stream:
+            for text in stream.text_stream:
+                full_text += text
+                yield (name, text, False)  # (speaker, delta, is_final)
+        full_text = (full_text or "").strip() or "(no response)"
+        yield (name, full_text, True)
+    except Exception as e:
+        yield (name, f"[Error: {e}]", True)
+
+
+def _general_stream_generator(turns: int, pause_seconds: float = 10):
+    """Generator that yields SSE events for General tab streaming. Pauses after each message so user can read."""
+    from datetime import datetime
+    import time
+
+    personas = _load_personas_list()
+    if len(personas) < 2:
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'Need at least 2 personas'})}\n\n"
+        return
+    data = load_json(GENERAL_CONV_FILE, default={"group": "General", "topic": "general chat", "participants": [], "messages": []})
+    messages = list(data.get("messages") or [])
+    num_personas = len(personas)
+
+    for i in range(turns):
+        persona_index = i % num_personas
+        name = personas[persona_index].get("name", "Unknown")
+        yield f"data: {json.dumps({'type': 'message_start', 'speaker': name})}\n\n"
+        full_message = ""
+        for speaker, chunk, is_final in _stream_one_general_message(personas, persona_index, messages):
+            if not is_final and chunk:
+                full_message += chunk
+                yield f"data: {json.dumps({'type': 'chunk', 'speaker': speaker, 'delta': chunk})}\n\n"
+            elif is_final:
+                full_message = (chunk or full_message or "").strip() or "(no response)"
+        msg_obj = {"speaker": name, "text": full_message, "timestamp": datetime.utcnow().isoformat() + "Z"}
+        messages.append(msg_obj)
+        yield f"data: {json.dumps({'type': 'message_end', 'speaker': name, 'text': full_message})}\n\n"
+        if i < turns - 1:
+            time.sleep(pause_seconds)
+
+    data["messages"] = messages
+    data["participants"] = list({m.get("speaker") for m in messages if m.get("speaker")})
+    CONVERSATIONS_DIR.mkdir(parents=True, exist_ok=True)
+    save_json(GENERAL_CONV_FILE, data)
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+
+# --- Gaurav exact flow: his personas, history file, bidding, Anthropic Claude stream ---
+
+def _gaurav_format_history(history_path: Path, turns: int = 10) -> str:
+    """Same as utils.format_history_as_string: last N lines from conversational_history.txt, 'Role: content\\n'."""
+    if not history_path.exists():
+        return "No history found."
+    formatted = []
+    try:
+        with open(history_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        for line in lines[-turns:]:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                role = entry.get("role", "Unknown").capitalize()
+                content = entry.get("content", "")
+                formatted.append(f"{role}: {content}")
+            except json.JSONDecodeError:
+                continue
+    except OSError:
+        return "No history found."
+    return "\n".join(formatted) if formatted else "No history found."
+
+
+def _gaurav_stream_one_agent(person_name: str, role: str, history_path: Path, sys_prompt_path: Path, persona_path: Path):
+    """
+    Same as agent_*.py: load persona + sys_prompt, format history, Anthropic Claude stream.
+    Yields (role, delta, is_final) for each chunk then (role, full_text, True).
+    """
+    import os
+    import re
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        yield (role, "[ANTHROPIC_API_KEY not set]", True)
+        return
+    try:
+        with open(sys_prompt_path, "r", encoding="utf-8") as f:
+            action_prompt = f.read()
+        with open(persona_path, "r", encoding="utf-8") as f:
+            persona_prompt = f.read()
+    except OSError:
+        yield (role, "[Could not read prompt files]", True)
+        return
+
+    sys_prompt = persona_prompt + action_prompt
+    conversation_hist = _gaurav_format_history(history_path, turns=10)
+
+    full_text = ""
+    try:
+        from anthropic import Anthropic
+        client = Anthropic(api_key=api_key)
+        with client.messages.stream(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            system=sys_prompt,
+            messages=[{"role": "user", "content": conversation_hist}],
+        ) as stream:
+            for text in stream.text_stream:
+                full_text += text
+                yield (role, text, False)
+    except Exception as e:
+        full_text = f"[Error: {e}]"
+        yield (role, full_text, True)
+        return
+
+    # Clean response: strip leading "Name: " like agent_*.py
+    full_text = re.sub(r"^[^:\n]+\s*:\s*", "", full_text, count=1)
+    full_text = (full_text or "").strip() or "(no response)"
+    yield (role, full_text, True)
+
+
+def _gaurav_replay_stream_generator(pause_seconds: float = 5):
+    """
+    Replay conversational_history.txt: stream every message with pause_seconds between each.
+    No API calls - just read the file and emit message_start, chunk, message_end, then sleep.
+    """
+    import time
+
+    if not GAURAV_HISTORY_FILE.exists():
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'conversational_history.txt not found'})}\n\n"
+        return
+
+    messages = []
+    try:
+        with open(GAURAV_HISTORY_FILE, "r", encoding="utf-8") as f:
+            raw = f.read()
+        # Some lines have multiple JSONs separated by "} {" - split and parse each
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            for i, part in enumerate(line.split("} {")):
+                s = part.strip()
+                if i > 0:
+                    s = "{" + s
+                if not s.endswith("}"):
+                    s += "}"
+                try:
+                    entry = json.loads(s)
+                    role = entry.get("role", "").strip()
+                    content = (entry.get("content") or "").strip()
+                    if role and content:
+                        messages.append({"role": role, "content": content})
+                except json.JSONDecodeError:
+                    continue
+    except OSError:
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'Could not read conversational_history.txt'})}\n\n"
+        return
+
+    if not messages:
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'No messages in conversational_history.txt'})}\n\n"
+        return
+
+    for i, msg in enumerate(messages):
+        role = msg.get("role", "Unknown")
+        text = msg.get("content", "")
+        yield f"data: {json.dumps({'type': 'message_start', 'speaker': role})}\n\n"
+        yield f"data: {json.dumps({'type': 'chunk', 'speaker': role, 'delta': text})}\n\n"
+        yield f"data: {json.dumps({'type': 'message_end', 'speaker': role, 'text': text})}\n\n"
+        if i < len(messages) - 1:
+            time.sleep(pause_seconds)
+
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+
+def _gaurav_stream_generator(max_rounds: int = 15, pause_seconds: float = 10):
+    """
+    Exact run.py flow: credits, random bid, winner speaks via Anthropic Claude stream.
+    Yields SSE events: message_start, chunk, message_end, done.
+    Pauses pause_seconds after each message so the user can read.
+    """
+    if not GAURAV_PERSON_BUILDER.exists() or not GAURAV_HISTORY_FILE.exists():
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'Gaurav folder not found (Agentic_social_gaurav with conversational_history.txt)'})}\n\n"
+        return
+
+    sys_prompt_path = GAURAV_PERSON_BUILDER / "sys_prompt.txt"
+    if not sys_prompt_path.exists():
+        yield f"data: {json.dumps({'type': 'error', 'detail': 'sys_prompt.txt not found in Personal_builder'})}\n\n"
+        return
+
+    credits_left = {k: GAURAV_INITIAL_CREDITS for k in GAURAV_PERSON_ROLE}
+    init_person = None
+    try:
+        with open(GAURAV_HISTORY_FILE, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        if lines:
+            last = lines[-1].strip()
+            if last:
+                entry = json.loads(last)
+                init_person = GAURAV_ROLE_PERSON.get(entry.get("role"))
+    except (OSError, json.JSONDecodeError):
+        pass
+    if init_person is None:
+        init_person = list(GAURAV_PERSON_ROLE.keys())[0]
+
+    import random
+
+    round_count = 0
+    while round_count < max_rounds and any(credits_left[k] > 0 for k in credits_left):
+        random_numbers = {}
+        for key in GAURAV_PERSON_ROLE:
+            random_numbers[key] = random.randint(1, credits_left[key]) if credits_left[key] > 0 else 0
+        if all(v == 0 for v in random_numbers.values()):
+            break
+
+        selected_person = max(random_numbers, key=random_numbers.get)
+        winning_bid = random_numbers[selected_person]
+        if winning_bid <= 0 or selected_person == init_person:
+            round_count += 1
+            continue
+
+        credits_left[selected_person] -= winning_bid
+        role = GAURAV_PERSON_ROLE[selected_person]
+        persona_path = GAURAV_PERSON_BUILDER / f"{selected_person}_persona_prompt.txt"
+        if not persona_path.exists():
+            round_count += 1
+            continue
+
+        yield f"data: {json.dumps({'type': 'message_start', 'speaker': role})}\n\n"
+        full_message = ""
+        for r, chunk, is_final in _gaurav_stream_one_agent(
+            selected_person, role, GAURAV_HISTORY_FILE, sys_prompt_path, persona_path
+        ):
+            if not is_final and chunk:
+                full_message += chunk
+                yield f"data: {json.dumps({'type': 'chunk', 'speaker': r, 'delta': chunk})}\n\n"
+            elif is_final:
+                full_message = (chunk or full_message or "").strip() or "(no response)"
+
+        with open(GAURAV_HISTORY_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"role": role, "content": full_message}) + "\n")
+
+        yield f"data: {json.dumps({'type': 'message_end', 'speaker': role, 'text': full_message})}\n\n"
+        init_person = selected_person
+        round_count += 1
+        if round_count < max_rounds and any(credits_left[k] > 0 for k in credits_left):
+            import time
+            time.sleep(pause_seconds)
+
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+
+@app.get("/api/conversations/general/stream")
+async def stream_general_conversation(turns: int = 10, pause_seconds: float = 5):
+    """
+    Stream General chat (SSE). When conversational_history.txt exists, replays it with pause_seconds
+    (default 5) between each message. Else generates via Claude/personas.
+    """
+    def gen():
+        if GAURAV_HISTORY_FILE.exists():
+            for chunk in _gaurav_replay_stream_generator(pause_seconds=pause_seconds):
+                yield chunk
+        elif GAURAV_PERSON_BUILDER.exists():
+            for chunk in _gaurav_stream_generator(max_rounds=turns, pause_seconds=pause_seconds):
+                yield chunk
+        else:
+            for chunk in _general_stream_generator(turns, pause_seconds=pause_seconds):
+                yield chunk
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/api/profile")
