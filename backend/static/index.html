@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proxy AI – AI Twin Networking</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="nav-bar">
+      <a href="/" class="nav-logo">🤖 Proxy AI</a>
+      <a href="/profile" class="nav-profile-link">Profile</a>
+    </header>
+
+    <div class="tabs-row">
+      <div class="tabs-wrap">
+        <button type="button" class="nav-tab active" data-chat="human">Human</button>
+        <button type="button" class="nav-tab" data-chat="general">General</button>
+        <button type="button" class="nav-tab" data-chat="sports">Sports</button>
+        <button type="button" class="nav-tab" data-chat="ai">AI</button>
+        <button type="button" class="nav-tab" data-chat="tech">Tech</button>
+        <div id="dynamic-tabs"></div>
+        <button type="button" class="nav-tab nav-tab-add" id="tab-add" title="Add topic">+</button>
+      </div>
+      <div id="add-topic-dropdown" class="add-topic-dropdown" style="display: none;">
+        <p class="add-topic-label">Add a topic</p>
+        <div id="add-topic-list" class="add-topic-list"></div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h2 class="sidebar-title">Your Matches</h2>
+        <div id="matches-list" class="match-cards">Loading…</div>
+        <div id="no-matches-msg" class="no-selection" style="display: none;">
+          <h3>👆 Select a match above</h3>
+          <p>Compatibility and shared interests will appear here</p>
+        </div>
+      </aside>
+
+      <main class="chat-main">
+        <div id="match-detail-view" class="match-detail-view" style="display: none;"></div>
+        <div id="chat-messages" class="chat-messages">Loading…</div>
+        <div id="human-input-area" class="human-input-area" style="display: none;">
+          <form id="human-form" class="human-form">
+            <input type="text" id="human-text" placeholder="Type a message…" required />
+            <button type="submit">Send</button>
+          </form>
+          <button type="button" id="human-clear" class="btn-clear">Clear chat</button>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

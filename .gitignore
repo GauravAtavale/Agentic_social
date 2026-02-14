@@ -1,0 +1,10 @@
+.env
+backend/.env
+conversation_audio/
+conversation_audio_*/
+conversations/
+audioconversations/
+__pycache__/
+*.pyc
+.DS_Store
+*.pyo
