@@ -8,6 +8,16 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+# Require anthropic at startup so General/Human streaming fails fast if not installed
+try:
+    import anthropic  # noqa: F401
+except ImportError:
+    raise ImportError(
+        "Missing 'anthropic' package. From the backend folder run: pip install -r requirements.txt\n"
+        "Or: python -m pip install anthropic\n"
+        "Then start the server with the same Python: python -m uvicorn main:app --reload"
+    )
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -422,11 +432,11 @@ def _gaurav_replay_stream_generator(pause_seconds: float = 5):
     yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
 
-def _gaurav_stream_generator(max_rounds: int = 15, pause_seconds: float = 10):
+def _gaurav_stream_generator(max_rounds: int = 15, pause_seconds: float = 3):
     """
-    Exact run.py flow: credits, random bid, winner speaks via Anthropic Claude stream.
-    Yields SSE events: message_start, chunk, message_end, done.
-    Pauses pause_seconds after each message so the user can read.
+    Exact run.py flow: credits (30 each), random bid, winner speaks (winner != init_person),
+    stream reply via Anthropic Claude token-by-token, append to conversational_history.txt,
+    then sleep(pause_seconds). Same as Gaurav but with Anthropic instead of Groq.
     """
     if not GAURAV_PERSON_BUILDER.exists() or not GAURAV_HISTORY_FILE.exists():
         yield f"data: {json.dumps({'type': 'error', 'detail': 'Gaurav folder not found (Agentic_social_gaurav with conversational_history.txt)'})}\n\n"
@@ -500,16 +510,16 @@ def _gaurav_stream_generator(max_rounds: int = 15, pause_seconds: float = 10):
 
 
 @app.get("/api/conversations/general/stream")
-async def stream_general_conversation(turns: int = 10, pause_seconds: float = 5):
+async def stream_general_conversation(turns: int = 15, pause_seconds: float = 3, replay: bool = False):
     """
-    Stream General chat (SSE). When conversational_history.txt exists, replays it with pause_seconds
-    (default 5) between each message. Else generates via Claude/personas.
+    Stream General chat (SSE). Default: generate live via Anthropic Claude (token-by-token streaming).
+    If replay=true and conversational_history.txt exists, replays that file with pause_seconds between messages.
     """
     def gen():
-        if GAURAV_HISTORY_FILE.exists():
+        if replay and GAURAV_HISTORY_FILE.exists():
             for chunk in _gaurav_replay_stream_generator(pause_seconds=pause_seconds):
                 yield chunk
-        elif GAURAV_PERSON_BUILDER.exists():
+        elif GAURAV_PERSON_BUILDER.exists() and GAURAV_HISTORY_FILE.exists():
             for chunk in _gaurav_stream_generator(max_rounds=turns, pause_seconds=pause_seconds):
                 yield chunk
         else:

@@ -63,6 +63,7 @@ function setActiveChat(chatKey) {
     b.classList.toggle('active', b.dataset.chat === chatKey);
   });
   if (chatKey === 'human') loadHumanChat();
+  else if (chatKey === 'general') startGeneralStream(); // Gaurav-style: start generating via Anthropic as soon as General is clicked
   else loadChat(chatKey);
 }
 
@@ -86,10 +87,13 @@ function loadChat(group) {
 }
 
 function startGeneralStream() {
-  chatMessagesEl.innerHTML = '<p class="empty-msg">Loading conversation… messages will stream with 5s between each.</p>';
-  const turns = 10;
-  const pauseSeconds = 5;
-  fetch(API + '/api/conversations/general/stream?turns=' + turns + '&pause_seconds=' + pauseSeconds)
+  chatMessagesEl.innerHTML = '<p class="empty-msg">Generating… (Gaurav-style: bidding, then each persona streams via Anthropic).</p>';
+  const turns = 15;   // max rounds like run.py loop
+  const pauseSeconds = 3;  // match Gaurav's time.sleep(3) between turns
+  const replay = false;
+  var url = API + '/api/conversations/general/stream?turns=' + turns + '&pause_seconds=' + pauseSeconds;
+  if (replay) url += '&replay=1';
+  fetch(url)
     .then(function(r) {
       if (!r.ok) throw new Error(r.statusText);
       if (!r.body) throw new Error('Streaming not supported');
