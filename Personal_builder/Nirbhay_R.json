@@ -1,0 +1,64 @@
+[
+  {
+    "timestamp": "2026-02-14T18:08:59.909Z",
+    "profile": {
+      "fullName": "Nirbhay Reddy",
+      "email": "nirbhayr@gmail.com",
+      "dob": "2003-01-01",
+      "gender": "Male",
+      "location": "New York, NY",
+      "profilePhoto": null
+    },
+    "socialLinks": {
+      "linkedinUrl": "https://www.linkedin.com/in/nirbhayareddy/",
+      "instagram": "",
+      "twitter": ""
+    },
+    "professional": {
+      "jobTitle": "Data and Application Intern",
+      "company": "ABCD",
+      "industry": "Healthcare",
+      "experience": "3",
+      "education": "MS in Computer Science, NYU",
+      "skills": [
+        "JavaScript",
+        "Project Management",
+        "Design",
+        "SQL",
+        "React"
+      ]
+    },
+    "interests": [
+      "Sports & Fitness",
+      "Movies & TV",
+      "Gaming",
+      "Photography",
+      "Outdoors & Nature"
+    ],
+    "weekend": "Socializing with friends at events",
+    "socialEnergy": "Introvert",
+    "communicationStyle": "Warm and empathetic",
+    "humor": [
+      "Silly & goofy"
+    ],
+    "values": [
+      "Career growth & ambition",
+      "Health & wellness",
+      "Work-life balance"
+    ],
+    "lifestyle": {
+      "fitness": "Gym regular",
+      "drinking": "Rarely",
+      "smoking": "No",
+      "pets": "Have pets"
+    },
+    "evening": "Working out or being active",
+    "lookingFor": [
+      "Professional networking"
+    ],
+    "dealbreakers": [
+      "Different political views"
+    ],
+    "distance": "Anywhere in the city"
+  }
+]

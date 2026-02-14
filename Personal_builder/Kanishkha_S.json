@@ -1,0 +1,67 @@
+[
+  {
+    "timestamp": "2026-02-14T18:04:31.012Z",
+    "profile": {
+      "fullName": "Kanishkha",
+      "email": "Kanishkha_s@gmail.com",
+      "dob": "1999-01-01",
+      "gender": "Male",
+      "location": "New York, NY",
+      "profilePhoto": null
+    },
+    "socialLinks": {
+      "linkedinUrl": "https://www.linkedin.com/in/gauravatavale/",
+      "instagram": "",
+      "twitter": ""
+    },
+    "professional": {
+      "jobTitle": "AI Research",
+      "company": "Amex",
+      "industry": "Fianace",
+      "experience": "9",
+      "education": "MS in Data Science, IUB",
+      "skills": [
+        "Python",
+        "Data Science",
+        "Machine Learning",
+        "Leadership",
+        "SQL"
+      ]
+    },
+    "interests": [
+      "Sports & Fitness",
+      "Travel & Adventure",
+      "Technology",
+      "Outdoors & Nature",
+      "Pets & Animals"
+    ],
+    "weekend": "Working on personal projects/hobbies",
+    "socialEnergy": "Extrovert",
+    "communicationStyle": "Casual and spontaneous",
+    "humor": [
+      "Witty & sarcastic"
+    ],
+    "values": [
+      "Financial stability",
+      "Health & wellness",
+      "Career growth & ambition"
+    ],
+    "lifestyle": {
+      "fitness": "Gym regular",
+      "drinking": "Rarely",
+      "smoking": "No",
+      "pets": "Love pets"
+    },
+    "evening": "Attending an event (concert, sports, etc.)",
+    "lookingFor": [
+      "New friends in my city",
+      "Activity partners (gym, hiking, etc.)",
+      "Dating/Romantic connection",
+      "Just seeing who's out there"
+    ],
+    "dealbreakers": [
+      "Different values around family"
+    ],
+    "distance": "Anywhere in the city"
+  }
+]

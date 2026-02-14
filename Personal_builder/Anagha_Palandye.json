@@ -1,0 +1,68 @@
+[
+  {
+    "profile": {
+      "fullName": "Anagha",
+      "email": "ap8884@nyu.edu",
+      "dob": "2001-01-01",
+      "gender": "Female",
+      "location": "New York, NY",
+      "profilePhoto": "anagha_cat.jpg"
+    },
+    "socialLinks": {
+      "linkedinUrl": "https://www.linkedin.com/in/anagha-palandye",
+      "instagram": "",
+      "twitter": ""
+    },
+    "professional": {
+      "jobTitle": "AI research",
+      "company": "my_own",
+      "industry": "technology",
+      "experience": "5",
+      "education": "MS Data Science, NYU",
+      "skills": [
+        "Python",
+        "Data Science",
+        "Machine Learning",
+        "Analytics",
+        "SQL"
+      ]
+    },
+    "interests": [
+      "Sports & Fitness",
+      "Travel & Adventure",
+      "Food & Cooking",
+      "Fashion",
+      "Pets & Animals"
+    ],
+    "weekend": "Working on personal projects/hobbies",
+    "socialEnergy": "Ambivert",
+    "communicationStyle": "Thoughtful and detailed",
+    "humor": [
+      "Observational"
+    ],
+    "values": [
+      "Career growth & ambition",
+      "Work-life balance",
+      "Financial stability"
+    ],
+    "lifestyle": {
+      "fitness": "Gym regular",
+      "drinking": "Socially",
+      "smoking": "No",
+      "pets": "Love pets"
+    },
+    "evening": "Trying a new restaurant or bar",
+    "lookingFor": [
+      "New friends in my city",
+      "Professional networking",
+      "Activity partners (gym, hiking, etc.)",
+      "Dating/Romantic connection",
+      "Just seeing who's out there"
+    ],
+    "dealbreakers": [
+      "Different political views",
+      "No ambition/career drive"
+    ],
+    "distance": "Open to different cities"
+  }
+]
