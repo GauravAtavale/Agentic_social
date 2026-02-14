@@ -62,8 +62,8 @@ def generate_persona_prompt(person_data):
 
 # person_name = "Kanishkha_S"
 # person_name = "Anagha_Palandye"
-# person_name = "Nirbhay_R"
-person_name = "Gaurav_Atavale"
+person_name = "Nirbhay_R"
+# person_name = "Gaurav_Atavale"
 
 with open(f"{person_name}.json", "r", encoding="utf-8") as f:
     people_list = json.load(f)

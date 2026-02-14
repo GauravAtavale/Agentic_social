@@ -8,7 +8,7 @@ plan_model = "meta-llama/llama-4-scout-17b-16e-instruct"
 action_model = "llama-3.1-8b-instant"
 fallback_model = "meta-llama/llama-4-scout-17b-16e-instruct"
 
-init_model = "llama-3.1-8b-instant" #"meta-llama/llama-4-scout-17b-16e-instruct"    
+init_model = "claude-sonnet-4-5-20250929"#"llama-3.1-8b-instant" #"meta-llama/llama-4-scout-17b-16e-instruct"       
 
 # ================================== Get System Prompt ==================================
 
