@@ -60,19 +60,31 @@ _run_process = None
 
 
 def _load_history():
-    """Return list of {role, content} from conversational_history.txt."""
+    """Return list of {role, content, timestamp} from conversational_history.txt."""
     if not HISTORY_FILE.exists():
         return []
     out = []
     try:
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            for line in f:
+            lines = f.readlines()
+            for i, line in enumerate(lines):
                 line = line.strip()
                 if not line:
                     continue
                 try:
                     entry = json.loads(line)
-                    out.append({"role": entry.get("role", ""), "content": entry.get("content", "")})
+                    # Use timestamp from entry, or generate one based on line position
+                    timestamp = entry.get("timestamp")
+                    if not timestamp:
+                        # Estimate timestamp: assume messages are ~3 seconds apart
+                        from datetime import datetime, timedelta
+                        base_time = datetime.utcnow() - timedelta(seconds=len(lines) * 3)
+                        timestamp = (base_time + timedelta(seconds=i * 3)).isoformat() + "Z"
+                    out.append({
+                        "role": entry.get("role", ""),
+                        "content": entry.get("content", ""),
+                        "timestamp": timestamp
+                    })
                 except json.JSONDecodeError:
                     continue
     except OSError:
@@ -99,7 +111,14 @@ def _stream_new_lines():
                 for i in range(last_count, len(lines)):
                     try:
                         entry = json.loads(lines[i])
-                        ev = {"type": "message", "role": entry.get("role", ""), "content": entry.get("content", "")}
+                        from datetime import datetime
+                        timestamp = entry.get("timestamp") or datetime.utcnow().isoformat() + "Z"
+                        ev = {
+                            "type": "message",
+                            "role": entry.get("role", ""),
+                            "content": entry.get("content", ""),
+                            "timestamp": timestamp
+                        }
                         yield f"data: {json.dumps(ev)}\n\n"
                     except json.JSONDecodeError:
                         pass

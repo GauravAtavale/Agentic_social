@@ -36,10 +36,22 @@ file_names_dict = {
 if not HISTORY_FILE.exists():
     raise FileNotFoundError(f"History file not found: {HISTORY_FILE}")
 with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-    lines = f.readlines()
+    lines = [ln.strip() for ln in f.readlines() if ln.strip()]  # Filter empty lines
 if not lines:
     raise ValueError("History file is empty")
-init_person = role_person_dict[json.loads(lines[-1].strip())['role']] 
+try:
+    last_entry = json.loads(lines[-1])
+    last_role = last_entry.get('role')
+    if not last_role or last_role not in role_person_dict:
+        # Default to first person if role not found
+        init_person = list(person_role_dict.keys())[0]
+        print(f"Warning: Role '{last_role}' not found in role_person_dict. Using default: {init_person}")
+    else:
+        init_person = role_person_dict[last_role]
+except (json.JSONDecodeError, KeyError) as e:
+    # Default to first person if parsing fails
+    init_person = list(person_role_dict.keys())[0]
+    print(f"Warning: Could not parse last line or find role. Using default: {init_person}. Error: {e}") 
 
 credits_left = {key: 100 for key in person_role_dict.keys()}
 
