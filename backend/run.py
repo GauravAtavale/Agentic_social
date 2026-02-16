@@ -5,7 +5,13 @@ import random
 import time
 import re
 import json
+from pathlib import Path
 import utils
+
+# Paths relative to repo root
+REPO_ROOT = Path(__file__).resolve().parent.parent
+HISTORY_FILE = REPO_ROOT / "data" / "conversational_history.txt"
+BACKEND_DIR = Path(__file__).resolve().parent
 
 # Mock data for testing
 person_role_dict = {
@@ -17,19 +23,23 @@ person_role_dict = {
 role_person_dict = {v: k for k, v in person_role_dict.items()}
 
 file_names_dict = {
-    "Gaurav_Atavale": "agent_Gaurav.py",
-    "Anagha_Palandye": "agent_Anagha.py",
-    "Kanishkha_S": "agent_Kanishkha.py",
-    "Nirbhay_R": "agent_Nirbhay.py"
+    "Gaurav_Atavale": BACKEND_DIR / "agent_Gaurav.py",
+    "Anagha_Palandye": BACKEND_DIR / "agent_Anagha.py",
+    "Kanishkha_S": BACKEND_DIR / "agent_Kanishkha.py",
+    "Nirbhay_R": BACKEND_DIR / "agent_Nirbhay.py"
     }
 
 # Loop until NO ONE has credits left (everyone is 0)
 
 # Run iterations of the simulation
 # init_person = "Gaurav_Atavale"
-with open("../conversational_history.txt", "r", encoding="utf-8") as f:
+if not HISTORY_FILE.exists():
+    raise FileNotFoundError(f"History file not found: {HISTORY_FILE}")
+with open(HISTORY_FILE, "r", encoding="utf-8") as f:
     lines = f.readlines()
-init_person = role_person_dict[json.loads(lines[-1:][0])['role']] 
+if not lines:
+    raise ValueError("History file is empty")
+init_person = role_person_dict[json.loads(lines[-1].strip())['role']] 
 
 credits_left = {key: 100 for key in person_role_dict.keys()}
 
@@ -68,18 +78,26 @@ while any(credits_left[key] > 0 for key in credits_left):
         # Only deduct if they actually bid something
         credits_left[selected_person] = max(0, credits_left[selected_person] - winning_bid)
         print(f"{selected_person} wins with bid {winning_bid} and will chat now.", "Credits left:", credits_left) 
-        with open(file_names_dict[selected_person], "r") as f:
-            exec(f.read())
+        agent_script = file_names_dict[selected_person]
+        if not agent_script.exists():
+            print(f"Warning: Agent script not found: {agent_script}")
+            continue
+        with open(agent_script, "r") as f:
+            exec(f.read(), {"REPO_ROOT": REPO_ROOT, "HISTORY_FILE": HISTORY_FILE, "__file__": str(agent_script)})
         init_person = selected_person
     elif selected_person == init_person:
-        # second higherst value from random_numbers dict
+        # second highest value from random_numbers dict
         second_highest_person = max((k for k in random_numbers if k != selected_person), key=random_numbers.get)
         selected_person = second_highest_person
         winning_bid = random_numbers[selected_person]
         credits_left[selected_person] = max(0, credits_left[selected_person] - winning_bid)
         print(f"{selected_person} wins with bid {winning_bid} and will chat now.", "Credits left:", credits_left) 
-        with open(file_names_dict[selected_person], "r") as f:
-            exec(f.read())
+        agent_script = file_names_dict[selected_person]
+        if not agent_script.exists():
+            print(f"Warning: Agent script not found: {agent_script}")
+            continue
+        with open(agent_script, "r") as f:
+            exec(f.read(), {"REPO_ROOT": REPO_ROOT, "HISTORY_FILE": HISTORY_FILE, "__file__": str(agent_script)})
         init_person = selected_person        
     else:
         print("No valid bids this round.")

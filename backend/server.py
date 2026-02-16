@@ -1,6 +1,6 @@
 """
-Web server for Personal_builder: one tab (world_chat). Runs run.py on startup
-and streams new lines from conversational_history.txt to the UI.
+Web server for Agentic Social: world_chat UI. Runs run.py on startup
+and streams new lines from data/conversational_history.txt to the UI.
 """
 import json
 import os
@@ -43,18 +43,18 @@ try:
 except ImportError:
     pass
 
-# History file: repo root (same as run.py's ../conversational_history.txt)
-HISTORY_FILE = BASE_DIR.parent / "conversational_history.txt"
+# Paths relative to repo root
+REPO_ROOT = BASE_DIR.parent
+HISTORY_FILE = REPO_ROOT / "data" / "conversational_history.txt"
+FRONTEND_DIR = REPO_ROOT / "frontend"
+CONFIG_DIR = REPO_ROOT / "config"
+DATA_DIR = REPO_ROOT / "data"
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="Personal_builder – world_chat")
-
-STATIC_DIR = BASE_DIR / "static"
-if not STATIC_DIR.exists():
-    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app = FastAPI(title="Agentic Social – world_chat")
 
 _run_process = None
 
@@ -112,9 +112,9 @@ def _stream_new_lines():
 @app.get("/")
 async def serve_index():
     """Serve the main UI (world_chat)."""
-    index_path = STATIC_DIR / "index.html"
+    index_path = FRONTEND_DIR / "index.html"
     if not index_path.exists():
-        return {"error": "Static files not found."}
+        return {"error": "Frontend files not found."}
     return FileResponse(index_path)
 
 
@@ -143,8 +143,8 @@ async def health():
     return {"status": "ok"}
 
 
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
 def _ensure_history_file_exists():
@@ -191,14 +191,14 @@ def _start_run_py():
 @app.on_event("startup")
 async def startup():
     _start_run_py()
-    print("Personal_builder – world_chat")
+    print("Agentic Social – world_chat")
     print("  UI: http://localhost:8001")
-    print("  run.py is running in background; new lines in conversational_history.txt stream to the UI.")
+    print("  run.py is running in background; new lines in data/conversational_history.txt stream to the UI.")
 
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Personal_builder world_chat server")
+    parser = argparse.ArgumentParser(description="Agentic Social world_chat server")
     parser.add_argument("--free-port", action="store_true", help="Kill process on port 8001 before starting")
     args = parser.parse_args()
     if args.free_port:

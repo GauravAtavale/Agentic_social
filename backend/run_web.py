@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Start the Personal_builder web server (UI + simulation stream).
-Run from repo root: python Personal_builder/run_web.py
-Or from Personal_builder: python run_web.py
+Start the Agentic Social web server (world_chat UI + simulation stream).
+Run from repo root: python backend/run_web.py
+Or from backend: python run_web.py
 Server runs at http://localhost:8001
 """
 import os

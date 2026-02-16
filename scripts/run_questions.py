@@ -13,14 +13,16 @@ import sys
 import tempfile
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(REPO_ROOT / "config" / ".env")
+    load_dotenv(REPO_ROOT / ".env")
 except ImportError:
     pass
 
-QUESTIONS_FILE = Path(__file__).parent / "QUESTIONS.md"
-BASE_DIR = Path(__file__).parent
+QUESTIONS_FILE = REPO_ROOT / "docs" / "QUESTIONS.md"
+BASE_DIR = REPO_ROOT
 # CONVERSATION_FILE and AUDIO_DIR set in main() from session number
 
 # Recording

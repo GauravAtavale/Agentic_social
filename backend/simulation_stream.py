@@ -1,16 +1,17 @@
 """
 Streaming version of the run.py simulation for the web UI.
 Yields SSE-style events (message_start, message_end, done, error) so the server can stream to the client.
-Uses the same utils and agent scripts as run.py; must run with cwd = Personal_builder so
-../conversational_history.txt resolves correctly when agent scripts are exec'd.
+Uses the same utils and agent scripts as run.py.
 """
 import json
 import os
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
-HISTORY_FILE = BASE_DIR.parent / "conversational_history.txt"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+BACKEND_DIR = Path(__file__).resolve().parent
+HISTORY_FILE = REPO_ROOT / "data" / "conversational_history.txt"
+CONFIG_DIR = REPO_ROOT / "config"
 
 # Same as run.py
 PERSON_ROLE = {
@@ -21,10 +22,10 @@ PERSON_ROLE = {
 }
 ROLE_PERSON = {v: k for k, v in PERSON_ROLE.items()}
 FILE_NAMES = {
-    "Gaurav_Atavale": "agent_Gaurav.py",
-    "Anagha_Palandye": "agent_Anagha.py",
-    "Kanishkha_S": "agent_Kanishkha.py",
-    "Nirbhay_R": "agent_Nirbhay.py",
+    "Gaurav_Atavale": BACKEND_DIR / "agent_Gaurav.py",
+    "Anagha_Palandye": BACKEND_DIR / "agent_Anagha.py",
+    "Kanishkha_S": BACKEND_DIR / "agent_Kanishkha.py",
+    "Nirbhay_R": BACKEND_DIR / "agent_Nirbhay.py",
 }
 INITIAL_CREDITS = 100
 BID_MODEL_PRIMARY = "claude-3-5-sonnet-20240620"
@@ -79,17 +80,16 @@ def run_simulation_stream(max_rounds=15, pause_seconds=0):
     """
     Generator that runs the bidding simulation and yields SSE-style dicts.
     Each yield is a dict with 'type' and other fields; the server will serialize as "data: {json}\n\n".
-    Uses existing utils and exec(agent_*.py); cwd is set to BASE_DIR so agent scripts find ../conversational_history.txt.
+    Uses existing utils and exec(agent_*.py).
     """
     import time
     import utils
 
-    # Run from Personal_builder so agent scripts see ../conversational_history.txt
     orig_cwd = os.getcwd()
     try:
-        os.chdir(BASE_DIR)
+        os.chdir(BACKEND_DIR)
     except OSError:
-        yield {"type": "error", "detail": "Could not change to Personal_builder directory"}
+        yield {"type": "error", "detail": "Could not change to backend directory"}
         return
 
     try:
@@ -122,13 +122,13 @@ def run_simulation_stream(max_rounds=15, pause_seconds=0):
                 credits_left[selected_person] = max(0, credits_left[selected_person] - winning_bid)
                 role = PERSON_ROLE[selected_person]
                 agent_script = FILE_NAMES.get(selected_person)
-                if not agent_script or not (BASE_DIR / agent_script).exists():
+                if not agent_script or not agent_script.exists():
                     round_count += 1
                     continue
                 yield {"type": "message_start", "speaker": role}
                 try:
-                    with open(BASE_DIR / agent_script, "r") as f:
-                        exec(f.read())
+                    with open(agent_script, "r") as f:
+                        exec(f.read(), {"REPO_ROOT": REPO_ROOT, "HISTORY_FILE": HISTORY_FILE, "__file__": str(agent_script)})
                 except Exception as e:
                     yield {"type": "message_end", "speaker": role, "text": f"[Error: {e}]"}
                 else:
@@ -146,11 +146,11 @@ def run_simulation_stream(max_rounds=15, pause_seconds=0):
                     credits_left[selected_person] = max(0, credits_left[selected_person] - winning_bid)
                     role = PERSON_ROLE[selected_person]
                     agent_script = FILE_NAMES.get(selected_person)
-                    if agent_script and (BASE_DIR / agent_script).exists():
+                    if agent_script and agent_script.exists():
                         yield {"type": "message_start", "speaker": role}
                         try:
-                            with open(BASE_DIR / agent_script, "r") as f:
-                                exec(f.read())
+                            with open(agent_script, "r") as f:
+                                exec(f.read(), {"REPO_ROOT": REPO_ROOT, "HISTORY_FILE": HISTORY_FILE, "__file__": str(agent_script)})
                         except Exception as e:
                             yield {"type": "message_end", "speaker": role, "text": f"[Error: {e}]"}
                         else:

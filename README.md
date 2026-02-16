@@ -1,229 +1,186 @@
-# Agentic Social Simulator
+# Agentic Social
 
-An **AI-powered social networking simulator** where you build a persona from a voice interview, chat with an AI (Claude), and watch multi-agent group conversations—including a **General** tab that replays or streams conversations (e.g. from [Agentic_social_gaurav](https://github.com/GauravAtavale/Agentic_social)) with configurable pauses between messages.
-
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Setup](#setup)
-- [Running the App](#running-the-app)
-- [Voice Interview (Persona Building)](#voice-interview-persona-building)
-- [Backend API](#backend-api)
-- [General Tab Streaming](#general-tab-streaming)
-- [Environment Variables](#environment-variables)
-- [Tech Stack](#tech-stack)
-- [Credits & References](#credits--references)
+An **AI-powered social networking simulator** where multiple AI personas engage in group conversations using a bidding system. Each persona bids (via LLM scoring) for the right to speak next, creating dynamic multi-agent interactions.
 
 ---
 
-## Overview
-
-Agentic Social lets you:
-
-1. **Create a profile** via a questionnaire and an in-app **voice interview** (ElevenLabs TTS/STT)—no file uploads.
-2. **Chat in the Human tab** with Claude; messages and emoji reactions are persisted.
-3. **Open the General tab** to stream a multi-agent conversation: either **replay** an existing `conversational_history.txt` (e.g. from `Agentic_social_gaurav`) with a 4–5 second pause between messages, or **generate** new turns via Anthropic Claude using Gaurav-style bidding and personas.
-4. **Browse Sports, AI, Tech** (and optional dynamic topics) for pre-generated group conversations.
-5. **View matches** and send connection requests from the sidebar.
-
-The backend is a **FastAPI** server that serves the API and a simple static frontend. Personas are stored as JSON; conversations can be generated from personas or replayed from a history file.
-
----
-
-## Features
-
-| Feature | Description |
-|--------|-------------|
-| **Profile creation** | Questionnaire + in-app voice interview; persona extracted via Claude and saved under `backend/personas/`. |
-| **Human chat** | One-on-one chat with Claude; messages have IDs and emoji reactions (👍❤️😂🔥). |
-| **General tab** | On open: if `Agentic_social_gaurav/conversational_history.txt` exists, **replays** every message with a 5s (configurable) pause; otherwise can **generate** multi-agent turns (Gaurav-style bidding + Claude streaming). |
-| **Sports / AI / Tech** | Pre-generated group conversations (from `generate_conversations.py`) and optional dynamic topics (e.g. Finance, Politics). |
-| **Matches** | Sidebar shows matches; click to view profile and send connection requests. |
-| **Voice interview (root)** | Standalone script: questions spoken via ElevenLabs, answers recorded and transcribed; saved to `convN.json` and `conversation_audio_N/`. |
-
----
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 Agentic_social/
-├── README.md                 # This file
-├── .env                      # Root: ELEVENLABS_API_KEY (for voice interview)
+├── backend/              # FastAPI server + multi-agent simulation
+│   ├── server.py        # Web server (world_chat UI)
+│   ├── run.py           # Main simulation loop (bidding + agents)
+│   ├── utils.py         # LLM helpers (Anthropic, Groq)
+│   ├── agent_*.py       # Individual persona scripts
+│   ├── simulation_stream.py  # Streaming version for web
+│   └── run_web.py       # Entry point to start server
+│
+├── frontend/            # Web UI (static HTML/CSS/JS)
+│   ├── index.html       # world_chat interface
+│   ├── app.js           # SSE client for live updates
+│   └── styles.css       # Styling
+│
+├── scripts/             # Utility scripts
+│   ├── run_questions.py # Voice interview (ElevenLabs TTS/STT)
+│   └── run_old_personal_builder.py  # Legacy simulation
+│
+├── config/              # Configuration files
+│   ├── sys_prompt.txt   # System prompt for agents
+│   ├── bidding_sys_prompt.txt  # Bidding prompt
+│   ├── *_persona_prompt.txt    # Per-persona prompts
+│   └── .env.example     # Environment variables template
+│
+├── data/                # Data files
+│   ├── conversational_history.txt  # Conversation log (one JSON per line)
+│   ├── *_*.json         # Persona data files
+│   └── old_convo.txt    # Legacy conversation
+│
+├── docs/                # Documentation
+│   ├── README.md        # Original README
+│   ├── QUESTIONS.md      # Interview questions
+│   ├── README_WEB.md     # Web UI documentation
+│   └── *.ipynb          # Jupyter notebooks
+│
+├── requirements.txt     # Python dependencies
 ├── .gitignore
-├── QUESTIONS.md              # Questions used in voice interview
-├── requirements.txt         # Root deps: elevenlabs, python-dotenv, sounddevice, etc.
-├── run_questions.py         # Voice Q&A: TTS questions, record + STT answers → convN.json
-├── Conversations/            # Optional: conv1.json, conv2.json, ... (interview outputs)
-│
-├── backend/
-│   ├── .env                  # ANTHROPIC_API_KEY, ELEVENLABS_API_KEY (optional)
-│   ├── main.py               # FastAPI app: API + static frontend; General stream/replay
-│   ├── create_persona.py     # Extract persona JSON from interview/conversation
-│   ├── generate_conversations.py  # Generate Sports/AI/Tech conversations + matches
-│   ├── requirements.txt     # fastapi, uvicorn, anthropic, python-dotenv, pydantic, elevenlabs
-│   ├── personas/             # Persona JSON files (from create_persona or profile flow)
-│   ├── conversations/       # sports.json, ai.json, tech.json, human.json, general.json
-│   ├── interviews/           # Optional interview JSON inputs
-│   ├── matches.json          # Generated by generate_conversations.py
-│   ├── profile.json          # Current user profile
-│   ├── connection_requests.json
-│   ├── static/
-│   │   ├── index.html        # Main app: tabs (Human, General, Sports, AI, Tech), matches, chat
-│   │   ├── app.js            # Load chat, General stream consumer, human form, reactions
-│   │   ├── styles.css
-│   │   ├── profile.html      # Questionnaire + in-app voice interview + “Create my persona”
-│   │   ├── profile.js
-│   │   └── profile.css
-│   └── README.md             # Backend-specific setup and API summary
-│
-└── Agentic_social_gaurav/    # Optional: reference repo with conversational_history.txt
-    ├── conversational_history.txt   # Used by General tab replay (one JSON per line or "} {")
-    └── Personal_builder/      # Persona prompts, sys_prompt.txt (for generate mode)
+└── README.md            # This file
 ```
 
 ---
 
-## Setup
+## 🚀 Quick Start
 
-### 1. Clone and install root dependencies (voice interview)
-
-```bash
-git clone https://github.com/GauravAtavale/Agentic_social.git
-cd Agentic_social
-pip install -r requirements.txt
-cp .env.example .env   # or create .env with ELEVENLABS_API_KEY
-```
-
-### 2. Backend
+### 1. Install Dependencies
 
 ```bash
-cd backend
 pip install -r requirements.txt
 ```
 
-Create `backend/.env` (see [Environment Variables](#environment-variables)).
+### 2. Configure API Keys
 
-### 3. Optional: General tab replay
-
-To **replay** an existing conversation when you open the General tab, ensure:
-
-- The repo includes a sibling folder **`Agentic_social_gaurav`** (or you create it), and  
-- Inside it, a file **`conversational_history.txt`** with one JSON object per line (or multiple per line separated by `} {`), e.g.:
-
-```text
-{"role": "Anagha", "content": "Hi, who are you?"}
-{"role": "Gaurav", "content": "Hi Anagha, I'm Gaurav..."}
-```
-
-The backend reads this file and streams each message with a **5 second** (configurable) pause between messages. No API calls are made in replay mode.
-
----
-
-## Running the App
-
-### Start the backend (API + frontend)
+Create `config/.env` (or copy from `config/.env.example`):
 
 ```bash
+ANTHROPIC_API_KEY=your_anthropic_key_here
+GROQ_API_KEY=your_groq_key_here
+ELEVENLABS_API_KEY=your_elevenlabs_key_here  # For voice interview script
+```
+
+### 3. Run the Web App
+
+```bash
+# From repo root
+python backend/run_web.py --free-port
+
+# Or from backend/
 cd backend
-uvicorn main:app --reload
+python run_web.py --free-port
 ```
 
-- **App:** [http://localhost:8000](http://localhost:8000)  
-- **Profile / Create persona:** [http://localhost:8000/profile](http://localhost:8000/profile)  
-- **API docs:** [http://localhost:8000/docs](http://localhost:8000/docs)  
-- **Health:** [http://localhost:8000/health](http://localhost:8000/health)
+Open **http://localhost:8001** to see the **world_chat** interface.
 
-### Run the voice interview (standalone)
+The server automatically starts `run.py` in the background, which runs the bidding simulation and writes to `data/conversational_history.txt`. New messages appear in the UI in real time via Server-Sent Events (SSE).
 
-From the **project root** (not `backend/`):
+---
+
+## 📖 How It Works
+
+### Multi-Agent Bidding System
+
+1. **Four personas** (Gaurav, Anagha, Kanishkha, Nirbhay) each start with **100 credits**.
+2. Each round, every persona with credits > 0 **bids** for the right to speak next:
+   - An **LLM** (Claude or LLaMA via Groq) scores how relevant the conversation is to that persona (0-100).
+   - The bid = `0.01 * score * current_credits`.
+3. The **highest bidder** wins (excluding the last speaker):
+   - Their credits are reduced by their bid.
+   - They generate a message via LLM using their persona prompt + conversation history.
+   - The message is appended to `data/conversational_history.txt`.
+4. The loop continues until **no one has credits left** or all bids are 0.
+
+### Web UI
+
+- **Single view**: `world_chat` shows the full conversation.
+- **On load**: Fetches existing history from `data/conversational_history.txt`.
+- **Live updates**: Opens an SSE stream (`/api/history/stream`) that polls the history file and pushes new messages as they're written by `run.py`.
+
+---
+
+## 🛠️ Development
+
+### Backend
+
+- **`backend/server.py`**: FastAPI app serving the UI and API endpoints.
+- **`backend/run.py`**: Main simulation loop (CLI version).
+- **`backend/utils.py`**: LLM helpers (bidding, message generation).
+- **`backend/agent_*.py`**: Individual persona scripts (executed by `run.py`).
+
+### Frontend
+
+- **`frontend/index.html`**: Single-page UI.
+- **`frontend/app.js`**: Fetches history and consumes SSE stream.
+- **`frontend/styles.css`**: Styling.
+
+### Scripts
+
+- **`scripts/run_questions.py`**: Voice interview script (ElevenLabs TTS/STT).
+
+---
+
+## 📁 Key Files
+
+| File | Purpose |
+|------|---------|
+| `data/conversational_history.txt` | Conversation log (one JSON `{"role": "...", "content": "..."}` per line) |
+| `config/sys_prompt.txt` | System prompt for all agents |
+| `config/bidding_sys_prompt.txt` | Prompt for LLM bidding |
+| `config/*_persona_prompt.txt` | Per-persona descriptions |
+| `backend/run.py` | Main simulation (CLI) |
+| `backend/server.py` | Web server |
+
+---
+
+## 🔧 Configuration
+
+- **API Keys**: Set in `config/.env` or repo root `.env`.
+- **Port**: Default 8001 (change in `backend/server.py`).
+- **Credits**: Initial credits per persona (default 100, in `backend/run.py`).
+- **Models**: Bidding uses Claude primary, LLaMA fallback; agents use Claude primary, LLaMA fallback.
+
+---
+
+## 📝 Notes
+
+- The **`backup_old`** folder is preserved and not modified.
+- Conversation history is written to `data/conversational_history.txt` (one JSON object per line).
+- The web server starts `run.py` automatically on startup.
+- If you see "Address already in use", use `--free-port` flag or kill the process on port 8001.
+
+---
+
+## 📚 Documentation
+
+- **`docs/README.md`**: Original project documentation.
+- **`docs/README_WEB.md`**: Web UI documentation.
+- **`docs/QUESTIONS.md`**: Interview questions for voice script.
+
+---
+
+## 🧪 Testing
 
 ```bash
-python run_questions.py
+# Health check
+curl http://localhost:8001/health
+
+# Get conversation history
+curl http://localhost:8001/api/history
+
+# Stream new messages (SSE)
+curl http://localhost:8001/api/history/stream
 ```
 
-You’ll be asked for a session number (e.g. 1–4). Questions are spoken via ElevenLabs; you answer by voice and press Enter when done. Outputs: `convN.json` and `conversation_audio_N/` (or `conversation.json` / `conversation_audio/` depending on script version).
-
 ---
 
-## Voice Interview (Persona Building)
+## 📄 License
 
-- **Questions** are defined in `QUESTIONS.md` (list items with `- `).
-- **Flow:** Each question is played with ElevenLabs TTS → you speak → recording stops on Enter → audio is sent to ElevenLabs STT → Q&A is appended to the conversation JSON and saved.
-- **Output:** e.g. `conv1.json`, `conv2.json`, … and optional `conversation_audio_1/`, etc.
-- You can then use the **Profile** page in the app (questionnaire + in-app voice interview) and “Create my persona”, or feed interview JSON into `backend/create_persona.py` to produce a persona in `backend/personas/`.
-
----
-
-## Backend API
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/` | Main app (index.html) |
-| GET | `/profile` | Profile / questionnaire / voice interview / create persona |
-| GET | `/api/conversations/{group}` | Get conversation for `human`, `general`, `sports`, `ai`, `tech`, or dynamic topic |
-| GET | `/api/conversations/general/stream?turns=10&pause_seconds=5` | **SSE stream:** replay or generate General chat; `pause_seconds` between messages (default 5) |
-| POST | `/api/conversations/human` | Send human message (body: `{"speaker","text"}`); Claude reply appended |
-| POST | `/api/conversations/human/react` | Add emoji reaction (body: `{"message_id", "emoji"}`) |
-| DELETE | `/api/conversations/human` | Clear human chat |
-| GET | `/api/matches` | Match list |
-| GET | `/api/personas` | All personas |
-| POST | `/api/create-persona` | Create persona from profile + optional conversation |
-| POST | `/api/connection-requests` | Send connection request (body: `{"to": "Name"}`) |
-| GET | `/api/profile` | Current user profile |
-| POST | `/api/profile` | Save profile |
-| GET | `/api/questions` | Questions for in-app voice interview |
-| POST | `/api/transcribe` | Transcribe audio (body: `{"audio_base64": "..."}`) |
-
----
-
-## General Tab Streaming
-
-When you **click the General tab**:
-
-1. The frontend calls **`GET /api/conversations/general/stream?turns=10&pause_seconds=5`**.
-2. **If `Agentic_social_gaurav/conversational_history.txt` exists:**  
-   The backend **replays** that file: it parses each message (supports multiple JSONs per line separated by `} {`) and sends Server-Sent Events (SSE):
-   - `message_start` (speaker)
-   - `chunk` (full message text)
-   - `message_end` (speaker, text)
-   - Then **sleeps 5 seconds** (or `pause_seconds`) before the next message.  
-   **No Anthropic API is called** in this mode.
-3. **Else** (no history file but Gaurav folder exists):  
-   The backend can **generate** new turns using Gaurav-style logic (credits, bidding, persona prompts) and **Anthropic Claude** streaming, with a pause between each turn.
-4. **Else:**  
-   Fallback to the built-in multi-persona General generator (round-robin personas, Claude).
-
-The frontend consumes the SSE stream and appends message bubbles in real time; on `message_end` it sets the full text so the message is always visible.
-
----
-
-## Environment Variables
-
-| Variable | Where | Purpose |
-|----------|--------|---------|
-| `ELEVENLABS_API_KEY` | Root `.env` | Voice interview (run_questions.py): TTS and STT |
-| `ANTHROPIC_API_KEY` | `backend/.env` | Human chat replies, General tab generation, persona extraction, create_persona |
-| `ELEVENLABS_API_KEY` | `backend/.env` (optional) | In-app voice interview and TTS/STT on profile page |
-
-The backend loads **`backend/.env`** on startup via `python-dotenv` so `ANTHROPIC_API_KEY` is available for all API and streaming logic.
-
----
-
-## Tech Stack
-
-- **Root:** Python 3, ElevenLabs (TTS/STT), sounddevice, soundfile, python-dotenv  
-- **Backend:** FastAPI, Uvicorn, Anthropic (Claude), Pydantic, python-dotenv, ElevenLabs (optional)  
-- **Frontend:** Vanilla HTML/CSS/JS, served by FastAPI static mount  
-- **Streaming:** Server-Sent Events (SSE) for General tab; fetch + ReadableStream on the client  
-
----
-
-## Credits & References
-
-- **Agentic_social_gaurav:** Multi-agent conversation format, persona prompts, and `conversational_history.txt` style (see [Agentic_social_gaurav](https://github.com/GauravAtavale/Agentic_social) or sibling folder). The General tab can **replay** that file with a 4–5 second interval between messages or use similar bidding/persona logic with Claude.
-- **Proxy AI:** Backend design (personas, conversations, matches, human chat) and static frontend structure.
+See LICENSE file (if present).
