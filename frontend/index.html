@@ -8,10 +8,31 @@
 </head>
 <body>
   <div class="app">
-    <header class="top-header">
-      <div class="header-left">
-        <span class="notification-icon">Top Groups</span>
+    <aside class="sidebar-drawer" id="sidebar-drawer" aria-label="Participants">
+      <div class="sidebar-inner">
+        <div class="sidebar-header">
+          <h2 class="sidebar-title">Participants</h2>
+          <button type="button" class="sidebar-close" id="sidebar-close" aria-label="Close menu">&times;</button>
+        </div>
+        <ul class="participant-list" id="participant-list">
+          <li class="participant-item">Gaurav</li>
+          <li class="participant-item">Anagha</li>
+          <li class="participant-item">Kanishkha</li>
+          <li class="participant-item">Nirbhay</li>
+        </ul>
       </div>
+    </aside>
+
+    <div class="app-body">
+      <header class="top-header">
+        <div class="header-left">
+          <button type="button" class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+            <span class="hamburger-line"></span>
+          </button>
+          <span class="notification-icon">Top Groups</span>
+        </div>
       <div class="header-center">
         <span class="header-title">Friend Finder</span>
       </div>
@@ -59,6 +80,7 @@
       <input type="text" id="message-input" placeholder="Tap to enter..." />
       <button class="input-btn emoji-btn">😊</button>
       <button class="input-btn plus-btn">+</button>
+    </div>
     </div>
   </div>
   <script src="/static/app.js"></script>

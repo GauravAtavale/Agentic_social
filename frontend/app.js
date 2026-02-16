@@ -422,6 +422,35 @@
     });
   });
 
+  // Hamburger menu / push sidebar toggle
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const sidebarDrawer = document.getElementById('sidebar-drawer');
+  const sidebarClose = document.getElementById('sidebar-close');
+
+  function openSidebar() {
+    if (sidebarDrawer) sidebarDrawer.classList.add('open');
+  }
+
+  function closeSidebar() {
+    if (sidebarDrawer) sidebarDrawer.classList.remove('open');
+  }
+
+  function toggleSidebar() {
+    const isOpen = sidebarDrawer && sidebarDrawer.classList.contains('open');
+    if (isOpen) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  }
+
+  if (hamburgerBtn) {
+    hamburgerBtn.addEventListener('click', toggleSidebar);
+  }
+  if (sidebarClose) {
+    sidebarClose.addEventListener('click', closeSidebar);
+  }
+
   // Initial load
   switchTab('world');
 })();
