@@ -9,7 +9,7 @@ action_model = "llama-3.1-8b-instant"
 fallback_model = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 init_model = "claude-sonnet-4-5-20250929"#"llama-3.1-8b-instant" #"meta-llama/llama-4-scout-17b-16e-instruct"       
-
+fallback_model = "llama-3.1-8b-instant"
 # ================================== Get System Prompt ==================================
 
 person_name = "Anagha_Palandye"
@@ -41,7 +41,10 @@ conversation_hist_format = utils.format_history_as_string(turns = 10)
 # print()
 
 # role = "Gaurav"  # or "agent2" depending on which agent is speaking
-agent_resp = utils.agent_sim(init_model, sys_prompt, conversation_hist_format)
+try:
+    agent_resp = utils.agent_sim(init_model, sys_prompt, conversation_hist_format)
+except:
+    agent_resp = utils.agent_sim(fallback_model, sys_prompt, conversation_hist_format)
 
 # Clean response 
 agent_resp = re.sub(r"^[^:\n]+\s*:\s*", "", agent_resp, count=1)

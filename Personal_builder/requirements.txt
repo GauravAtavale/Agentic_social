@@ -1,0 +1,8 @@
+# Web server for Personal_builder (UI + simulation stream)
+fastapi>=0.104.0
+uvicorn>=0.24.0
+python-dotenv>=1.0.0
+
+# Already needed by utils.py and agent scripts for bidding/speaking
+anthropic>=0.18.0
+groq>=0.4.0
